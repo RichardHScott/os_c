@@ -27,7 +27,8 @@ $(kernel): $(assembly_object_files) $(c_object_files) $(linker_script)
 
 build/arch/$(arch)/%.o: src/arch/$(arch)/%.s
 	@mkdir -p $(shell dirname $@)
-	$(AS) --64 -ad $< -o $@
+	@nasm -felf64 $< -o $@
+#	$(AS) --64 -ad $< -o $@
 
 build/%.o: src/%.c
 	@mkdir -p $(shell dirname $@)
