@@ -1,1 +1,1 @@
-"C:\Program Files\qemu\qemu-system-i386.exe" -kernel "C:\Users\Linuva\Dropbox\c\os\myos.bin"
+"C:\Program Files\qemu\qemu-system-i386.exe" -cdrom "C:\Users\Linuva\Dropbox\c\os\build\os-x86.iso" -s
