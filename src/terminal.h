@@ -47,3 +47,4 @@ void print_text(const char* text);
 void print_hex_number(uint32_t num);
 void set_foreground_color(vga_color_code new_color);
 void set_background_color(vga_color_code new_color);
+void print_hex_uint64(uint64_t num);

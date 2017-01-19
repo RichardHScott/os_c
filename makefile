@@ -1,7 +1,7 @@
-CC=/mnt/c/Users/Linuva/Dropbox/c/cross-chain/bin/$(arch)-elf-gcc-6.3.0
-CCX=/mnt/c/Users/Linuva/Dropbox/c/cross-chain/bin/$(arch)-elf-g++
-AS=/mnt/c/Users/Linuva/Dropbox/c/cross-chain/bin/$(arch)-elf-as
-LD=/mnt/c/Users/Linuva/Dropbox/c/cross-chain/bin/$(arch)-elf-ld
+CC=/mnt/c/solutions/cross-chain/bin/$(arch)-elf-gcc-6.3.0
+CCX=/mnt/c/solutions/c/cross-chain/bin/$(arch)-elf-g++
+AS=/mnt/c/solutions/cross-chain/bin/$(arch)-elf-as
+LD=/mnt/c/solutions/cross-chain/bin/$(arch)-elf-ld
 
 CFLAGS=-std=gnu99 -ffreestanding -Wall -Wextra
 CCXFLAGS=

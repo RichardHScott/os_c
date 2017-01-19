@@ -103,3 +103,19 @@ void print_hex_number(uint32_t num) {
 
 	print_text(buf);
 }
+
+void print_hex_uint64(uint64_t num) {
+	char buf[19] = "0x0000000000000000";
+	// buf[0] = '0';
+	// buf[1] = 'x';
+	// buf[10] = 0;
+
+	int i=17;
+	while(num > 0) {
+		int end_digit = num % 16;
+		buf[i--] = (end_digit < 10) ? (end_digit + 0x30) : (end_digit + 0x37);
+		num = num >> 4;
+	}
+
+	print_text(buf);
+}
