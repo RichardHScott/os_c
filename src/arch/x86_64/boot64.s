@@ -26,9 +26,54 @@ error:
     mov byte [0xb800c], al
     hlt
 
-setup_interrupt_handlers:
-    ;mov qword [interrupt_descriptor_table.base], interrupt_vectors
 
+
+; rax - register a extended
+; rbx - register b extended
+; rcx - register c extended
+; rdx - register d extended
+; rbp - register base pointer (start of stack)
+; rsp - register stack pointer (current location in stack, growing downwards)
+; rsi - register source index (source for data copies)
+; rdi - register destination index (destination for data copies)
+; r8 - register 8
+; r9 - register 9
+; r10 - register 10
+; r11 - register 11
+; r12 - register 12
+; r13 - register 13
+; r14 - register 14
+; r15 - register 15
+
+; Callee will save RBP, RBX, and R12–R15
+; We save the other registers
+; Shouldn't be touching the XMM registers, but check this!
+; GCC might be using them
+%macro save_registers 0
+    push rax
+    push rcx
+    push rdx
+    push rsi
+    push rdi
+    push r8
+    push r9
+    push r10
+    push r11
+%endmacro
+
+%macro restore_registers 0
+    pop r11
+    pop r10
+    pop r9
+    pop r8
+    pop rdi
+    pop rsi
+    pop rdx
+    pop rcx
+    pop rax
+%endmacro
+
+setup_interrupt_handlers:
     mov rcx, 0
 .setup_idt_loop:
     mov rax, i_ok
@@ -59,10 +104,6 @@ setup_interrupt_handlers:
     cmp rcx, 256
     jne .setup_idt_loop
 
-    ;lea rax, interrupt_descriptor_table
-    ;mov qword [interrupt_descriptor_table.pointer], interrupt_descriptor_table
-    ;mov eax, interrupt_descriptor_table
-    ;mov dword [interrupt_descriptor_table.pointer], eax
     lidt [interrupt_descriptor_table]
     
     mov r8, 0
@@ -70,58 +111,47 @@ setup_interrupt_handlers:
     ret
 
 i_keyboard:
-    pushad
-;    mov rdi, "K"
-;    call print_char
+    save_registers
 
-    
     in al, 0x60
-    mov dl, al
+    mov edi, 0x2f002f00
+    or dl, al
+    mov dword [0xb8000], edi
     call print_char
 
     mov al, 0x20
     out 0x20, al
 
-    popad
+    restore_registers
     iretq   
 
 i_ok_timer:
-    pushad
-
+    ;call save_registers
+    push rdi
+    push rax
     mov rdi, "T"
     call print_char
-    pop rdi
 
     mov al, 0x20
     out 0x20, al
-    
-    popad
-
+    pop rax
+    pop rdi
+    ;call restore_registers
     iretq
 
 i_ok:
-;    mov qword [0xb8012], r8
-;    cmp r8, 1
-;    je .reset
-;    mov r8, 1
-    pushad
-    mov rdi, "N"
-    call print_char
+    save_registers
+    ;mov rdi, "N"
+    ;call print_char
 
     mov dword [0xb8000], 0x2f522f45
     mov dword [0xb8004], 0x2f3a2f52
     mov dword [0xb8008], 0x2f202f20
-    jmp .done
-.reset:
-    mov r8, 0
-    mov dword [0xb8000], 0x2f524f45
-    mov dword [0xb8004], 0x4f3a4f52
-    mov dword [0xb8008], 0x4f204f20
-.done:
+
     mov al, 0x20
     out 0x20, al
 
-    popad
+    restore_registers
 
     iretq
 

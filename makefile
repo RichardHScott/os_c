@@ -3,7 +3,7 @@ CCX=/mnt/c/solutions/c/cross-chain/bin/$(arch)-elf-g++
 AS=/mnt/c/solutions/cross-chain/bin/$(arch)-elf-as
 LD=/mnt/c/solutions/cross-chain/bin/$(arch)-elf-ld
 
-CFLAGS=-std=gnu99 -ffreestanding -Wall -Wextra
+CFLAGS=-std=gnu99 -ffreestanding -Wall -Wextra -mno-red-zone
 CCXFLAGS=
 
 arch ?= x86_64
