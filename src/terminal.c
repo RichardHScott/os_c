@@ -78,6 +78,10 @@ void terminal_put_char(vga_char c) {
 
 static const char newline = '\n';
 
+void print_char(char c) {
+	terminal_put_char(make_vga_char(c, terminal.default_color));
+}
+
 void print_text(const char* text) {
 	for(size_t i=0; i < strlen(text); ++i) {
 		if(text[i] == newline) {

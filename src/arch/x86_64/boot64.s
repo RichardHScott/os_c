@@ -1,5 +1,6 @@
 global long_mode_start
 extern kernel_main
+extern print_char
 
 section .text
 bits 64
@@ -31,7 +32,14 @@ setup_interrupt_handlers:
     mov rcx, 0
 .setup_idt_loop:
     mov rax, i_ok
-
+    cmp rcx, 0x20
+    jnz .not_timer
+    mov rax, i_ok_timer
+.not_timer:
+    cmp rcx, 0x21
+    jnz .not_keyboard
+    mov rax, i_keyboard
+.not_keyboard:
     mov rbx, rcx
     imul rbx, 16
     add rbx, interrupt_vectors
@@ -61,11 +69,45 @@ setup_interrupt_handlers:
 
     ret
 
+i_keyboard:
+    pushad
+;    mov rdi, "K"
+;    call print_char
+
+    
+    in al, 0x60
+    mov dl, al
+    call print_char
+
+    mov al, 0x20
+    out 0x20, al
+
+    popad
+    iretq   
+
+i_ok_timer:
+    pushad
+
+    mov rdi, "T"
+    call print_char
+    pop rdi
+
+    mov al, 0x20
+    out 0x20, al
+    
+    popad
+
+    iretq
+
 i_ok:
-    mov qword [0xb8012], r8
-    cmp r8, 1
-    je .reset
-    mov r8, 1
+;    mov qword [0xb8012], r8
+;    cmp r8, 1
+;    je .reset
+;    mov r8, 1
+    pushad
+    mov rdi, "N"
+    call print_char
+
     mov dword [0xb8000], 0x2f522f45
     mov dword [0xb8004], 0x2f3a2f52
     mov dword [0xb8008], 0x2f202f20
@@ -76,11 +118,10 @@ i_ok:
     mov dword [0xb8004], 0x4f3a4f52
     mov dword [0xb8008], 0x4f204f20
 .done:
-    push rax
     mov al, 0x20
     out 0x20, al
-    mov al, 0x20
-    pop rax
+
+    popad
 
     iretq
 
