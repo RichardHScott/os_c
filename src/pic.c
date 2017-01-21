@@ -25,48 +25,6 @@ enum pic_icw4 {
     pic_x86_mode = 0x1
 };
 
-static inline uint8_t inb(uint16_t port) {
-    uint8_t ret;
-    asm volatile ( "inb %1, %0"
-                   : "=a"(ret)
-                   : "Nd"(port) );
-    return ret;
-}
-
-static inline uint16_t inw(uint16_t port) {
-    uint16_t ret;
-    asm volatile ("inw %1, %0"
-                  : "=a"(ret)
-                  : "Nd"(port));
-    return ret;
-}
-
-static inline uint32_t inl(uint16_t port) {
-    uint32_t ret;
-    asm volatile ("inl %1, %0"
-                  : "=a"(ret)
-                  : "Nd"(port));
-    return ret;
-}
-
-static inline void outb(uint16_t port, uint8_t val) {
-    asm volatile ("outb %0, %1"
-                  : 
-                  : "a"(val), "Nd"(port));
-}
-
-static inline void outw(uint16_t port, uint16_t val) {
-    asm volatile ("outw %0, %1"
-                  : 
-                  : "a"(val), "Nd"(port));
-}
-
-static inline void outl(uint16_t port, uint32_t val) {
-    asm volatile ("outb %0, %1"
-                  : 
-                  : "a"(val), "Nd"(port));
-}
-
 // Write to a port that is unused during PIC initialisation
 static inline void io_wait() {
     outb(0x80, 0);
@@ -104,6 +62,9 @@ void irq_clear_mask(uint8_t irq_line) {
     outb(port, value);        
 }
 
+static uint8_t master_remap;
+static uint8_t slave_remap;
+
 void pic_init(uint8_t master_remap_offset, uint8_t slave_remap_offset) {
     uint8_t master_mask = inb(master_pic_data);
     uint8_t slave_mask = inb(slave_pic_data);
@@ -131,6 +92,21 @@ void pic_init(uint8_t master_remap_offset, uint8_t slave_remap_offset) {
     outb(master_pic_data, master_mask);
     outb(slave_pic_data, slave_mask);
 
+
+}
+
+void add_interrupt_handler(uint16_t interrupt, uintptr_t handler) {
+    asm_add_interrupt_handler(interrupt, handler);
+}
+
+void pic_write_EOI(uint8_t irq) {
+    if(irq > 8) {
+        outb(slave_pic_command, PIC_EOI);
+    }
+    outb(master_pic_command, PIC_EOI);
+}
+
+void pic_enable_interrupts(void) {
     pic_start_interrupts();
 
     outb(0x64, 0x60);
@@ -139,9 +115,6 @@ void pic_init(uint8_t master_remap_offset, uint8_t slave_remap_offset) {
     irq_clear_mask(1);
 }
 
-pic_write_EOI(uint8_t irq) {
-    if(irq > 8) {
-        outb(slave_pic_command, PIC_EOI);
-    }
-    outb(master_pic_command, PIC_EOI);
+void pic_disable_interrupts(void) {
+
 }

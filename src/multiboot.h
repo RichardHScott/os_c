@@ -95,7 +95,6 @@ struct multiboot_elf_section_header {
     uint32_t sh_info;
     uint64_t sh_addralign;
     uint64_t sh_entsize;
-    uint16_t padding;
 } __attribute__ ((packed));
 
 struct multiboot_elf_symbols {
@@ -205,6 +204,14 @@ uintptr_t start_ptr;
 
 struct multiboot_start* start;
 struct multiboot_memory_information *mem_info;
+
+struct multiboot_data {
+    struct multiboot* start;
+    struct multiboot_memory_map* memory_map;
+    struct multiboot_elf_symbols* elf_symbols;
+};
+
+struct multiboot_data data;
 
 void init_multiboot_data(uintptr_t pmultiboot);
 void parse_multiboot_data(uintptr_t pstart);

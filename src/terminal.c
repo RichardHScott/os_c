@@ -25,7 +25,7 @@ void init_terminal(void) {
 
 	clear_terminal();
 
-	print_text("Terminal init completed.");
+	print_text("Terminal init completed.\n");
 }
 
 void clear_terminal(void) {
@@ -79,7 +79,11 @@ void terminal_put_char(vga_char c) {
 static const char newline = '\n';
 
 void print_char(char c) {
-	terminal_put_char(make_vga_char(c, terminal.default_color));
+	if(c == newline) {
+		print_newline();
+	} else {
+		terminal_put_char(make_vga_char(c, terminal.default_color));
+	}
 }
 
 void print_text(const char* text) {
@@ -94,9 +98,6 @@ void print_text(const char* text) {
 
 void print_hex_number(uint32_t num) {
 	char buf[11] = "0x00000000";
-	// buf[0] = '0';
-	// buf[1] = 'x';
-	// buf[10] = 0;
 
 	int i=9;
 	while(num > 0) {
@@ -110,9 +111,6 @@ void print_hex_number(uint32_t num) {
 
 void print_hex_uint64(uint64_t num) {
 	char buf[19] = "0x0000000000000000";
-	// buf[0] = '0';
-	// buf[1] = 'x';
-	// buf[10] = 0;
 
 	int i=17;
 	while(num > 0) {

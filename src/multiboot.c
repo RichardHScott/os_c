@@ -1,16 +1,23 @@
 #include "multiboot.h"
 #include "terminal.h"
 
+struct multiboot_memory_information* info;
+struct multiboot_boot_load_name* name;
+struct multiboot_bios_boot_device* device;
+struct multiboot_boot_command_line* command_line;
+struct multiboot_elf_symbols* symbols;
+struct multiboot_memory_map* maps;
+
 void init_multiboot_data(uintptr_t pmultiboot) {
     start_ptr = pmultiboot;
     start = pmultiboot;
-    print_text("Total size: ");
-    print_hex_number(start->total_size);
-    print_newline();
 
-    print_text("Reserved");
-    print_hex_number(start->reserved);
-    print_newline();
+    print_text("Multiboot addr: ");
+    print_hex_uint64(start_ptr);
+    print_text(" Total size: ");
+    print_hex_number(start->total_size);
+
+    data.start = pmultiboot;
 
     parse_multiboot_data(start);
 }
@@ -26,10 +33,10 @@ void parse_multiboot_data(uintptr_t pstart) {
             case multiboot_memory_info_tag:
                 print_text("Mem info tag\n");
                 {
-                struct multiboot_memory_information* info = (struct multiboot_memory_information*) curr_tag;
+                info = (struct multiboot_memory_information*) curr_tag;
                 print_text("mem_lower: ");
                 print_hex_number(info->mem_lower);
-                print_text("  mem_upper: ");
+                print_text(" mem_upper: ");
                 print_hex_number(info->mem_upper);
                 print_newline();
                 }
@@ -37,7 +44,7 @@ void parse_multiboot_data(uintptr_t pstart) {
             case multiboot_boot_load_name_tag:
                 {
                 print_text("boot load name\n");
-                struct multiboot_boot_load_name* name = (struct multiboot_boot_load_name*) curr_tag;
+                name = (struct multiboot_boot_load_name*) curr_tag;
                 print_text(name->string);
                 print_newline();
                 }
@@ -45,14 +52,14 @@ void parse_multiboot_data(uintptr_t pstart) {
             case multiboot_bios_boot_device_tag:
                 {
                 print_text("Bios boot device\n");
-                struct multiboot_bios_boot_device* device = (struct multiboot_bios_boot_device*) curr_tag;
+                device = (struct multiboot_bios_boot_device*) curr_tag;
                 //TODO
                 }
                 break;
             case multiboot_boot_command_line_tag:
                 {
                 print_text("Boot command line\n");
-                struct multiboot_boot_command_line* command_line = (struct multiboot_boot_command_line*) curr_tag;
+                command_line = (struct multiboot_boot_command_line*) curr_tag;
                 print_text(command_line->string);
                 print_newline();
                 }
@@ -63,41 +70,24 @@ void parse_multiboot_data(uintptr_t pstart) {
             case multiboot_elf_symbols_tag:
                 {
                 print_text("Elf symbols\n");
-                struct multiboot_elf_symbols* symbols = (struct multiboot_elf_symbols*) curr_tag;
-                
-                struct multiboot_elf_section_header *string_table = (struct multiboot_elf_section_header*) ((uintptr_t)symbols + 5*sizeof(uint32_t) + symbols->shndx*symbols->entsize);
-
-                for(int i=0; i<symbols->num; ++i) {
-                    struct multiboot_elf_section_header* elf_header = (struct multiboot_elf_section_header*) ((uintptr_t)symbols + 5*sizeof(uint32_t) + i*symbols->entsize);
-
-                    print_text((char*)(string_table->sh_addr) + elf_header->sh_name);
-                    print_newline();
-                    print_hex_number(elf_header->sh_type);
-                    print_newline();
-                    print_hex_number(elf_header->sh_name);
-                    print_newline();
-                    for(int k=0;k<1000000000;++k){}
-                }
-
-                print_hex_number(symbols->shndx);
+                symbols = (struct multiboot_elf_symbols*) curr_tag;
+                data.elf_symbols = symbols;
                 }
                 break;
             case multiboot_memory_map_tag:
                 {
                 print_text("Memory map tag\n");
-                struct multiboot_memory_map* maps = (struct multiboot_memory_map*) curr_tag;
-                
-                int num_of_entries = ((uintptr_t)(maps->size) - 4*sizeof(uint32_t))/maps->entry_size;
-                for(int i=0; i<num_of_entries;++i) {
-                    struct multiboot_memory_map_entry* entry = (struct multiboot_memory_map_entry*) ((uintptr_t)(maps) + 4*sizeof(uint32_t) + i*sizeof(struct multiboot_memory_map_entry));
-                    print_text("Base addr: ");
-                    print_hex_uint64(entry->base_addr);
-                    print_newline();
-                    print_text("Length: ");
-                    print_hex_uint64(entry->length);
-                    print_newline();
-                    print_text("Type: ");
-                    print_hex_number(entry->type);
+                maps = (struct multiboot_memory_map*) curr_tag;
+                data.memory_map = maps;
+
+                int num_of_maps = (maps->size - 4*sizeof(uint32_t))/maps->entry_size;
+
+                for(int i=0; i<num_of_maps; ++i) {
+                    struct multiboot_memory_map_entry mem_map = maps->memory_maps[i];
+                    print_text("Addr: ");
+                    print_hex_uint64(mem_map.base_addr);
+                    print_text(" Length: ");
+                    print_hex_uint64(mem_map.length);
                     print_newline();
                 }
                 }
@@ -155,7 +145,42 @@ void parse_multiboot_data(uintptr_t pstart) {
                 print_newline();
                 break;
         }
-    } while((curr_tag = find_next_tag_address(curr_tag)) != NULL);  
+    } while((curr_tag = find_next_tag_address(curr_tag)) != NULL);
+
+    print_elf_symbols();
+}
+
+void print_memory_tags(void) {
+    int num_of_entries = ((uintptr_t)(maps->size) - 4*sizeof(uint32_t))/maps->entry_size;
+
+    for(int i=0; i<num_of_entries;++i) {
+        struct multiboot_memory_map_entry* entry = (struct multiboot_memory_map_entry*) ((uintptr_t)(maps) + 4*sizeof(uint32_t) + i*sizeof(struct multiboot_memory_map_entry));
+        print_text("Addr: ");
+        print_hex_uint64(entry->base_addr);
+        print_text(" Length: ");
+        print_hex_uint64(entry->length);
+        print_text(" Type: ");
+        print_hex_number(entry->type);
+        print_newline();
+    }
+}
+
+void print_elf_symbols(void) {
+    struct multiboot_elf_section_header *string_table = (struct multiboot_elf_section_header*) ((uintptr_t)symbols + 5*sizeof(uint32_t) + symbols->shndx*symbols->entsize);
+
+    for(int i=0; i<symbols->num; ++i) {
+        struct multiboot_elf_section_header* elf_header = (struct multiboot_elf_section_header*) ((uintptr_t)symbols + 5*sizeof(uint32_t) + i*symbols->entsize);
+
+        print_text("Addr: ");
+        print_hex_uint64(elf_header->sh_addr);
+        print_text(" Type: ");
+        print_hex_number(elf_header->sh_type);
+        print_text(" Size: ");
+        print_hex_number(elf_header->sh_size);
+        print_text(" ");
+        print_text((char*)(string_table->sh_addr) + elf_header->sh_name);
+        print_newline();
+    }
 }
 
 void print_tag(struct multiboot_tag* curr_tag) {

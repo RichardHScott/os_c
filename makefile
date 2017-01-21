@@ -3,7 +3,7 @@ CCX=/mnt/c/solutions/c/cross-chain/bin/$(arch)-elf-g++
 AS=/mnt/c/solutions/cross-chain/bin/$(arch)-elf-as
 LD=/mnt/c/solutions/cross-chain/bin/$(arch)-elf-ld
 
-CFLAGS=-std=gnu99 -ffreestanding -Wall -Wextra -mno-red-zone
+CFLAGS=-std=gnu99 -ffreestanding -Wall -Wextra -mno-red-zone -g
 CCXFLAGS=
 
 arch ?= x86_64
@@ -28,8 +28,7 @@ $(kernel): $(assembly_object_files) $(c_object_files) $(linker_script)
 build/arch/$(arch)/%.o: src/arch/$(arch)/%.s
 	@mkdir -p $(shell dirname $@)
 	@nasm -felf64 $< -o $@
-#	$(AS) --64 -ad $< -o $@
-
+	
 build/%.o: src/%.c
 	@mkdir -p $(shell dirname $@)
 	$(CC) -c $< -o $@ $(CFLAGS)

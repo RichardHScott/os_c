@@ -1,6 +1,12 @@
 global long_mode_start
+global asm_add_interrupt_handler
+
 extern kernel_main
 extern print_char
+extern print_hex_uint64
+extern print_newline
+
+global i_ok
 
 section .text
 bits 64
@@ -11,6 +17,12 @@ long_mode_start:
     call setup_interrupt_handlers
 
     call kernel_main
+
+    mov dword [0xb8000], 0x4f204f20
+    mov dword [0xb8004], 0x4f3a4f52
+    mov dword [0xb8008], 0x2f524f45
+
+    hlt
 
 ok:
     ; print `OK` to screen
@@ -26,6 +38,7 @@ error:
     mov byte [0xb800c], al
     hlt
 
+done:
 
 
 ; rax - register a extended
@@ -50,6 +63,7 @@ error:
 ; Shouldn't be touching the XMM registers, but check this!
 ; GCC might be using them
 %macro save_registers 0
+    sub rsp, 130
     push rax
     push rcx
     push rdx
@@ -71,15 +85,21 @@ error:
     pop rdx
     pop rcx
     pop rax
+    add rsp, 130
 %endmacro
 
 %macro interrupt_shim_x 1
 interrupt_shim_%1:
     save_registers
+    cld
 
     call [interrupt_functions + %1 * 8]
 
+    mov al, 0x20
+    out 0x20, al
+
     restore_registers
+
     iretq
 %endmacro
 
@@ -90,9 +110,10 @@ interrupt_shim_%1:
 %endrep
 
 ;function prototype asm_add_interrupt_handler(uint16_t interrupt, void(*handler)(void))
-;x86_64 system V ABI has rsi = interrupt, rdi = handler
+;x86_64 system V ABI has rsi = remapped interrupt number (e.g. timer = 0x20, keyboard = 0x21), rdi = handler
 asm_add_interrupt_handler:
-
+    mov qword [interrupt_functions + edi*8], rsi
+    ret
 
 ;interrupt address in rax
 ;interrupt vector in rbx
@@ -121,10 +142,6 @@ setup_interrupt_handlers:
     jnz .not_timer
     mov rax, i_ok_timer
 .not_timer:
-    cmp rcx, 0x21
-    jnz .not_keyboard
-    mov rax, i_keyboard
-.not_keyboard:
 
     ; rax = interrupt function
     mov qword [rcx*8 + interrupt_functions], rax
@@ -142,49 +159,17 @@ setup_interrupt_handlers:
 
     ret
 
-i_keyboard:
-    save_registers
-
-    in al, 0x60
-    mov edi, 0x2f002f00
-    or dl, al
-    mov dword [0xb8000], edi
-    call print_char
-
-    mov al, 0x20
-    out 0x20, al
-
-    restore_registers
-    ret
-
 i_ok_timer:
-    push rdi
-    push rax
-    mov rdi, "T"
-    call print_char
-
-    mov al, 0x20
-    out 0x20, al
-    pop rax
-    pop rdi
     ret
 
 i_ok:
-    save_registers
-
-    mov dword [0xb8000], 0x2f522f45
-    mov dword [0xb8004], 0x2f3a2f52
-    mov dword [0xb8008], 0x2f202f20
 
     mov al, 0x20
     out 0x20, al
-
-    restore_registers
-
     ret
 
 section .bss
-align 4
+align 8
 ;8byte ptrs to interrupt functions
 interrupt_functions:
     resb 256*8
@@ -207,6 +192,7 @@ interrupt_descriptor_table:
     dq interrupt_shim_%1
 %endmacro
 
+align 8
 interrupt_shim_addr_base:
 %assign interrupt_shim_counter 0
 %rep 256
