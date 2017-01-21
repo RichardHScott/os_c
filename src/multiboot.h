@@ -44,7 +44,8 @@ struct multiboot_module {
     uint8_t string[];
 } __attribute__((packed)) __attribute__ ((aligned (8)));
 
-
+// Elf header info from
+// https://en.wikipedia.org/wiki/Executable_and_Linkable_Format
 enum elf_sh_type {
     sht_null = 0,
     sht_progbits = 1,
@@ -68,20 +69,20 @@ enum elf_sh_type {
 };
 
 enum ef_sh_flags {
-    shf_write = 1,
-    shf_alloc = 2,
-    shf_execinstr = 3,
-    shf_merge = 4,
-    shf_strings = 5,
-    shf_info_link = 6,
-    shf_link_order = 7,
-    shf_os_nonconforming = 8,
-    shf_group = 9,
-    shf_tls = 10,
-    shf_maskos = 11,
-    shf_maskproc = 12,
-    shf_ordered = 13,
-    shf_exclude = 14
+    shf_write = 0x1,
+    shf_alloc = 0x2,
+    shf_execinstr = 0x4,
+    shf_merge = 0x10,
+    shf_strings = 0x20,
+    shf_info_link = 0x40,
+    shf_link_order = 0x80,
+    shf_os_nonconforming = 0x100,
+    shf_group = 0x200,
+    shf_tls = 0x400,
+    shf_maskos = 0x0ff00000,
+    shf_maskproc = 0xf0000000,
+    shf_ordered = 0x4000000,
+    shf_exclude = 0x8000000
 };
 
 struct multiboot_elf_section_header {

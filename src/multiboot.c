@@ -150,6 +150,59 @@ void parse_multiboot_data(uintptr_t pstart) {
     print_elf_symbols();
 }
 
+const char *ef_sh_flags_str[] = { "", "W", "A", "X", "M", "S", "IL", "LO", "OS", "G", "T", "MO", "MP", "ORD", "EXC" };
+
+char* get_sh_flag_string(enum ef_sh_flags flag) {
+    int index = 0;
+
+    switch(flag) {
+        case shf_write:
+            index = 1;
+            break;
+        case shf_alloc:
+            index = 0x2;
+            break;
+        case shf_execinstr:
+            index = 0x3;
+            break;
+        case shf_merge:
+            index = 0x4;
+            break;
+        case shf_strings:
+            index = 0x5;
+            break;
+        case shf_info_link:
+            index = 0x6;
+            break;
+        case shf_link_order:
+            index = 0x7;
+            break;
+        case shf_os_nonconforming:
+            index = 0x8;
+            break;
+        case shf_group:
+            index = 0x9;
+            break;
+        case shf_tls:
+            index = 0xa;
+            break;
+        case shf_maskos:
+            index = 0xb;
+            break;
+        case shf_maskproc:
+            index = 0xc;
+            break;
+        case shf_ordered:
+            index = 0xd;
+            break;
+        case shf_exclude:
+            index = 0xe;
+            break;
+    }
+
+    return ef_sh_flags_str[index];
+}
+
 void print_memory_tags(void) {
     int num_of_entries = ((uintptr_t)(maps->size) - 4*sizeof(uint32_t))/maps->entry_size;
 
@@ -172,9 +225,17 @@ void print_elf_symbols(void) {
         struct multiboot_elf_section_header* elf_header = (struct multiboot_elf_section_header*) ((uintptr_t)symbols + 5*sizeof(uint32_t) + i*symbols->entsize);
 
         print_text("Addr: ");
-        print_hex_uint64(elf_header->sh_addr);
+        print_hex_number(elf_header->sh_addr);
         print_text(" Type: ");
         print_hex_number(elf_header->sh_type);
+        print_text(" Flag: ");
+        for(size_t i=1; i<(SIZE_MAX>>1); i=i<<1) {
+            enum ef_sh_flags flag = i & elf_header->sh_flags;
+            if(flag != 0) {
+                print_text(get_sh_flag_string(flag));
+                print_text(" ");
+            }
+        }
         print_text(" Size: ");
         print_hex_number(elf_header->sh_size);
         print_text(" ");
