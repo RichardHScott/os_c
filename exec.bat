@@ -1,1 +1,1 @@
-"C:\Program Files\qemu\qemu-system-i386.exe" -cdrom "C:\Users\Linuva\Dropbox\c\os\build\os-x86.iso" -s -d cpu_reset
+"C:\Program Files\qemu\qemu-system-x86_64.exe" -cdrom "C:\solutions\os_c\build\os-x86_64.iso" -no-shutdown -no-reboot -s

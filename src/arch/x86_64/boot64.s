@@ -73,6 +73,46 @@ error:
     pop rax
 %endmacro
 
+%macro interrupt_shim_x 1
+interrupt_shim_%1:
+    save_registers
+
+    call [interrupt_functions + %1 * 8]
+
+    restore_registers
+    iretq
+%endmacro
+
+%assign interrupt_shim_counter 0
+%rep 256
+    interrupt_shim_x interrupt_shim_counter
+%assign interrupt_shim_counter interrupt_shim_counter+1
+%endrep
+
+;function prototype asm_add_interrupt_handler(uint16_t interrupt, void(*handler)(void))
+;x86_64 system V ABI has rsi = interrupt, rdi = handler
+asm_add_interrupt_handler:
+
+
+;interrupt address in rax
+;interrupt vector in rbx
+create_interrupt:
+    imul rbx, 16               ; interrupt table addr = interrupt vector * sizeof(interrupt struct) 
+    add rbx, interrupt_vectors ;                        + base_interrupt_addr_offset
+
+    mov word [rbx], ax
+    mov word [rbx+2], 8
+    mov word [rbx+4], 0x8e00
+
+    shr rax, 16
+    mov word [rbx+6], ax
+
+    shr rax, 16
+    mov dword [rbx+8], eax
+    mov dword [rbx+12], 0
+
+    ret
+
 setup_interrupt_handlers:
     mov rcx, 0
 .setup_idt_loop:
@@ -85,20 +125,12 @@ setup_interrupt_handlers:
     jnz .not_keyboard
     mov rax, i_keyboard
 .not_keyboard:
+
+    ; rax = interrupt function
+    mov qword [rcx*8 + interrupt_functions], rax
+    mov rax, [interrupt_shim_addr_base + rcx*8]
     mov rbx, rcx
-    imul rbx, 16
-    add rbx, interrupt_vectors
-
-    mov word [rbx], ax
-    mov word [rbx+2], 8
-    mov word [rbx+4], 0x8e00
-
-    shr rax, 16
-    mov word [rbx+6], ax
-
-    shr rax, 16
-    mov dword [rbx+8], eax
-    mov dword [rbx+12], 0
+    call create_interrupt
 
     inc rcx
     cmp rcx, 256
@@ -123,10 +155,9 @@ i_keyboard:
     out 0x20, al
 
     restore_registers
-    iretq   
+    ret
 
 i_ok_timer:
-    ;call save_registers
     push rdi
     push rax
     mov rdi, "T"
@@ -136,13 +167,10 @@ i_ok_timer:
     out 0x20, al
     pop rax
     pop rdi
-    ;call restore_registers
-    iretq
+    ret
 
 i_ok:
     save_registers
-    ;mov rdi, "N"
-    ;call print_char
 
     mov dword [0xb8000], 0x2f522f45
     mov dword [0xb8004], 0x2f3a2f52
@@ -153,11 +181,20 @@ i_ok:
 
     restore_registers
 
-    iretq
+    ret
 
+section .bss
 align 4
+;8byte ptrs to interrupt functions
+interrupt_functions:
+    resb 256*8
+
+;the interrupt vector is a shim around pop/save registers
 interrupt_vectors:
     resb 256*16
+
+section .rodata
+align 4
 interrupt_descriptor_table:
 .limit:
     dw 16*256-1
@@ -165,3 +202,14 @@ interrupt_descriptor_table:
     dq interrupt_vectors
 .pointer:
     dq interrupt_descriptor_table
+
+%macro get_interrupt_function_addr_x 1
+    dq interrupt_shim_%1
+%endmacro
+
+interrupt_shim_addr_base:
+%assign interrupt_shim_counter 0
+%rep 256
+    get_interrupt_function_addr_x interrupt_shim_counter
+%assign interrupt_shim_counter interrupt_shim_counter+1
+%endrep
