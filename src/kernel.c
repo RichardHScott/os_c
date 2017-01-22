@@ -3,6 +3,7 @@
 #include "pic.h"
 #include "keyboard.h"
 #include "frame_allocator.h"
+#include "paging.h"
 
 //Calling convention on x86-64 System V ABI
 //rdi, rsi, rdx, rcx for ints
@@ -20,13 +21,17 @@ void kernel_main(uintptr_t pmultiboot) {
 
 	init_allocator(&data);
 
-	while(1) {
-		struct frame f;
-		allocate_frame(&f);
+	test();
 
-		print_text("Alloc frame num: ");
-		print_hex_number(f.number);
-		print_newline();
+
+	while(1) {
+		// struct frame f;
+		// allocate_frame(&f);
+
+		// print_text("Alloc frame num: ");
+		// print_hex_number(f.number);
+		// print_newline();
+
 
 		for(int k = 0; k < 50000000; ++k) {}
 	}

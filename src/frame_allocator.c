@@ -1,7 +1,5 @@
 #include "frame_allocator.h"
 
-const size_t page_size = 4096;
-
 void init_allocator(struct multiboot_data *data) {
     allocator.next_free_frame.number = 0;
 
@@ -13,7 +11,7 @@ void init_allocator(struct multiboot_data *data) {
     uint64_t min_addr = UINT64_MAX;
     for(int i=0; i<allocator.num_entries; ++i) {
         if(min_addr > allocator.mem_map->memory_maps[i].base_addr
-            && allocator.mem_map->memory_maps[i].length >= page_size) {
+            && allocator.mem_map->memory_maps[i].length >= PAGE_SIZE) {
             min_addr = allocator.mem_map->memory_maps[i].base_addr;
             allocator.entry_index = i;
         }
@@ -43,7 +41,11 @@ void init_allocator(struct multiboot_data *data) {
 }
 
 void get_frame_for_addr(struct frame *frame, uintptr_t addr) {
-    frame->number = addr / page_size;
+    frame->number = addr / PAGE_SIZE;
+}
+
+uintptr_t get_frame_start_addr(struct frame *frame) {
+    return frame->number * PAGE_SIZE;
 }
 
 static void switch_area() {
@@ -55,7 +57,7 @@ static void switch_area() {
 
     for(int i=0; i<allocator.num_entries; ++i) {
         if(min_addr <= allocator.mem_map->memory_maps[i].base_addr
-            && allocator.mem_map->memory_maps[i].length >= page_size
+            && allocator.mem_map->memory_maps[i].length >= PAGE_SIZE
             && next_min_addr > allocator.mem_map->memory_maps[i].base_addr) {
             next_min_addr = allocator.mem_map->memory_maps[i].base_addr;
             allocator.entry_index = i;
