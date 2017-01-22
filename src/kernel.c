@@ -18,9 +18,16 @@ void kernel_main(uintptr_t pmultiboot) {
 
 	init_multiboot_data(pmultiboot);
 
-	init_allocator(&data, 0);
+	init_allocator(&data);
 
 	while(1) {
+		struct frame f;
+		allocate_frame(&f);
 
+		print_text("Alloc frame num: ");
+		print_hex_number(f.number);
+		print_newline();
+
+		for(int k = 0; k < 50000000; ++k) {}
 	}
 }
