@@ -38,7 +38,6 @@ void init_page_table(struct page_table* table) {
     }
 }
 
-
 const struct page_table* p4_table = 0xfffffffffffff000;
 
 struct page_table* descened_page_table(struct page_table *table, size_t index) {
@@ -55,7 +54,7 @@ struct page_table* descened_page_table(struct page_table *table, size_t index) {
 
 void set_page_table_entry(struct page_table_entry *entry, struct frame *frame, uintptr_t flags) {
     //assert that the frame is aligned to 4096 bytes
-    //assert(((!physical_addr_mask) & get_frame_start_addr(frame)) == 0);
+    assert(((!physical_addr_mask) & get_frame_start_addr(frame)) == 0);
 
     entry->entry = (get_frame_start_addr(frame) & physical_addr_mask) | flags;
 }
@@ -111,7 +110,8 @@ void translate_page(struct page *page, struct frame *frame) {
     table = descened_page_table(table, get_p3_index(page));
 
     if(table->entries[get_p2_index(page)].entry & huge_mask) {
-        //todo
+        //todo 
+        
         get_physical_frame(&table->entries[get_p2_index(page)], frame);
         frame->number += get_p1_index(page);
 
@@ -193,7 +193,7 @@ void test(void) {
     print_newline();
 
     print_text("Translation for (300 * 512 * 4096) is: ");
-    print_hex_uint64(translate(299 * 512 * 4096));
+    print_hex_uint64(translate(300 * 512 * 4096));
     print_newline();
 
     for(uintptr_t i=0; i<UINTPTR_MAX; ++i) {

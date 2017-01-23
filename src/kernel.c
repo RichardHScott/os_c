@@ -5,6 +5,8 @@
 #include "frame_allocator.h"
 #include "paging.h"
 
+#include "assert.h"
+
 //Calling convention on x86-64 System V ABI
 //rdi, rsi, rdx, rcx for ints
 

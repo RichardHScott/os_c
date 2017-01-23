@@ -8,8 +8,66 @@ extern print_newline
 
 global i_ok
 
+global _os_assert
+
 section .text
 bits 64
+
+_os_assert:
+    ; rdx = __LINE
+    ; rsi = __FILE__
+    ; rdi = #EX
+
+    ; Line  
+    mov dword [0xb8000], 0x2f692f4c
+    mov dword [0xb8004], 0x2f652f6e
+    mov dword [0xb8008], 0x2f002f00
+
+    ; File
+    mov dword [0xb80a0], 0x2f692f46
+    mov dword [0xb80a4], 0x2f652f6c
+    mov dword [0xb80a8], 0x2f002f00
+
+    ; Fail
+    mov dword [0xb8140], 0x2f612f46
+    mov dword [0xb8144], 0x2f6c2f69
+    mov dword [0xb8148], 0x2f002f00
+
+    mov r8, 0xb800c
+    mov r9, 0xb80ac
+    mov r10, 0xb814c
+.print_ex_:
+    cmp byte [rdx], 0
+    je .print_file_
+    mov bx, 0x2f00
+    or bl, byte [rdx]
+    mov word [r8], bx
+    add r8, 2
+    inc rdx
+    jmp .print_ex_
+
+.print_file_:
+    cmp byte [rsi], 0
+    je .print_line_
+    mov bx, 0x2f00
+    or bl, byte [rsi]
+    mov word [r9], bx
+    add r9, 2
+    inc rsi
+    jmp .print_file_
+
+.print_line_:
+    cmp byte [rdi], 0
+    je .end_of_assert
+    mov bx, 0x2f00
+    or bl, byte [rdi]
+    mov word [r10], bx
+    add r10, 2
+    inc rdi
+    jmp .print_line_
+
+.end_of_assert:
+    hlt;
 
 long_mode_start:
     call ok
