@@ -45,9 +45,6 @@ typedef struct {
 
 void clear_terminal(void);
 void init_terminal(void);
-void print_text(const char* text);
 void set_foreground_color(vga_color_code new_color);
 void set_background_color(vga_color_code new_color);
-void terminal_print_char(char c);
-
 void terminal_printf(const char* str, ...);

@@ -362,13 +362,13 @@ static void print_integer_as_hex(struct printf_format *format, size_t num) {
 		num = num >> 4;
 	}
 
-	for(i=0; i < sizeof(buf)/sizeof(buf[0]); ++i) {
+	for(i=0; i < sizeof(buf)/sizeof(buf[0]) - 1; ++i) {
 		if(buf[i] != '0') {
 			break;
 		}
 	}
 
-	i = min(i, 16 - format->width);
+	i = min(i, 15 - format->width);
 
 	if(format->flags & ALWAYS_SHOW_0x_OR_DECIMAL_POINT) {
 		if(format->specifier == 'X') {
@@ -464,6 +464,8 @@ static void print_double(struct printf_format* format, double data) {
 
 }
 
+const int tab_space_num = 4;
+
 void terminal_printf(const char* str, ...) {
 	int curr_arg = 0;
 	va_list args;
@@ -502,11 +504,10 @@ void terminal_printf(const char* str, ...) {
 						}
 						break;
 					case S_CHAR:
-						print_s_char(&format, (unsigned char)va_arg(args, int));
 						break;
 					case CHAR:
 						if(format.is_pointer) {
-							print_string(&format, va_arg(args, char*));
+							print_string(&format, (char*)va_arg(args, int));
 						} else {
 							print_char(&format, (char)va_arg(args, int));
 						}
@@ -552,6 +553,10 @@ void terminal_printf(const char* str, ...) {
 
 		if(str[i] == '\n') {
 			print_newline();
+		} else if(str[i] == '\t') {
+			for(int tab_cnt=0; tab_cnt < tab_space_num; ++tab_cnt) {
+				terminal_put_char(make_vga_char(' ', terminal.default_color));
+			}
 		} else {
 			//print normal char
 			terminal_put_char(make_vga_char(str[i], terminal.default_color));

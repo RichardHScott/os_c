@@ -23,7 +23,7 @@ void kernel_main(uintptr_t pmultiboot) {
 
 	init_allocator(&data);
 
-	test();
+	//test();
 
 
 	while(1) {
@@ -33,7 +33,10 @@ void kernel_main(uintptr_t pmultiboot) {
 		// print_text("Alloc frame num: ");
 		// print_hex_number(f.number);
 		// print_newline();
-
+		int foo = 10;
+		int bar = 0xdeadbeef;
+		size_t baz = 0xcafebabecafebabe;
+		//terminal_printf("\ntest\ntest2\ntest3\n%x\n%3X\n%#x\n%X\n%zx", foo, foo, bar, bar, baz);
 
 		for(int k = 0; k < 50000000; ++k) {}
 	}

@@ -225,32 +225,19 @@ void remap_kernel() {
 }
 */
 void test(void) {
-    print_text("Translation for 0x0 is: ");
-    print_hex_uint64(translate(0));
-    print_newline();
+    terminal_printf("Translation for 0x0 is: %#zx\n", translate(0));
 
+    terminal_printf("Translation for 4096 is: %#zx\n", translate(4096));
 
-    print_text("Translation for 4096 is: ");
-    print_hex_uint64(translate(4096));
-    print_newline();
+    terminal_printf("Translation for 512 * 4096 is: %#zx\n", translate(512 * 4096));
 
-    print_text("Translation for (512 * 4096) is: ");
-    print_hex_uint64(translate((512 * 4096)));
-    print_newline();
-
-    print_text("Translation for (300 * 512 * 4096) is: ");
-    print_hex_uint64(translate(300 * 512 * 4096));
-    print_newline();
+    terminal_printf("Translation for 300 * 512 * 4096 is: %#zx\n", translate(300 * 512 * 4096));
 
     for(uintptr_t i=0; i<UINTPTR_MAX; ++i) {
         uintptr_t trans = translate(i);
         if(i != trans) {
             
-            print_text("i: ");
-            print_hex_uint64(i);
-
-            print_text(" trans: ");
-            print_hex_uint64(trans);
+            terminal_printf("Failed. i: %#zx \t trans: %#zx\n", i, trans);
             break;
         }
     }

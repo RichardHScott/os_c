@@ -100,6 +100,6 @@ void keyboard_interrupt(void) {
 
     char ascii = ascii_key[code];
     if(ascii != 0) {
-        print_char(ascii);
+        terminal_print_char(ascii);
     }
 }
