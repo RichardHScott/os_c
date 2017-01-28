@@ -2,6 +2,8 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdarg.h>
+#include "assert.h"
 
 static const size_t COL_MAX = 25;
 static const size_t ROW_MAX = 80;
@@ -44,8 +46,8 @@ typedef struct {
 void clear_terminal(void);
 void init_terminal(void);
 void print_text(const char* text);
-void print_hex_number(uint32_t num);
 void set_foreground_color(vga_color_code new_color);
 void set_background_color(vga_color_code new_color);
-void print_hex_uint64(uint64_t num);
-void print_char(char c);
+void terminal_print_char(char c);
+
+void terminal_printf(const char* str, ...);
