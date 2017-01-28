@@ -98,7 +98,7 @@ uint16_t get_p1_index(struct page* p) {
     return p->number & 0777;
 }
 
-void translate_page(struct page *page, struct frame *frame) {
+int translate_page(struct page *page, struct frame *frame) {
     struct page_table* table = p4_table;
 
     table = descened_page_table(table, get_p4_index(page));
@@ -112,15 +112,17 @@ void translate_page(struct page *page, struct frame *frame) {
     if(table->entries[get_p2_index(page)].entry & huge_mask) {
         //todo 
         
-        get_physical_frame(&table->entries[get_p2_index(page)], frame);
+        if(0 != get_physical_frame(&table->entries[get_p2_index(page)], frame))
+            return -1;
+
         frame->number += get_p1_index(page);
 
-        return;
+        return 0;
     }
 
     table = descened_page_table(table, get_p2_index(page));
 
-    get_physical_frame(&table->entries[get_p1_index(page)], frame);
+    return get_physical_frame(&table->entries[get_p1_index(page)], frame);
 }
 
 physical_addr translate(virtual_addr vaddr) {
@@ -164,6 +166,21 @@ void map_page(struct page *page, uintptr_t flags) {
     map_page_to_frame(page, &frame, flags);
 }
 
+void identity_map_page(struct frame *frame, uintptr_t flags) {
+    struct page p;
+    get_page_for_vaddr(get_frame_start_addr(frame), &p);
+    map_page_to_frame(&p, frame, flags);
+}
+
+void flush_tlb() {
+    assert(0 != 0);
+    //todo implement this
+}
+
+void invalidate_page() {
+    assert(0 != 0);
+}
+
 void unmap_page(struct page *page) {
     struct page_table* table = p4_table;
 
@@ -176,8 +193,37 @@ void unmap_page(struct page *page) {
     struct frame frame;
     get_physical_frame(&table->entries[get_p1_index(page)], &frame);
     deallocate_frame(&frame);
+
+    flush_tlb();
 }
 
+/*
+void remap_kernel() {
+    struct page p;
+    p.number = 0xdeadbeef;
+
+    struct frame new_p4_frame;
+    allocate_frame(&new_p4_frame);
+
+    map_page_to_frame(page, &new_p4_frame, present_mask | writeable_mask);
+
+    struct page_table new_p4_table = *(struct page_table*)(&new_p4_frame);
+    init_page_table(&new_p4_table);
+
+    set_page_table_entry(&new_p4_table->entries[511], &new_p4_frame, present_mask | writeable_mask);
+
+    unmap_page(p);
+
+    for each section in multiboot->elfsections {
+        for each frame in section {
+            table.identity_map_page(&frame, present_mask | writeable_mask);
+        }
+    }
+
+    activate_page_table(&table);
+    create_guard_page_for_stack();
+}
+*/
 void test(void) {
     print_text("Translation for 0x0 is: ");
     print_hex_uint64(translate(0));
