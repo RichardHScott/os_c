@@ -14,6 +14,7 @@ section .text
 bits 64
 
 _os_assert:
+    cli
     ; rdx = __LINE
     ; rsi = __FILE__
     ; rdi = #EX
@@ -67,7 +68,7 @@ _os_assert:
     jmp .print_line_
 
 .end_of_assert:
-    hlt;
+    hlt
 
 long_mode_start:
     call ok
