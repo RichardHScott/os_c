@@ -10,6 +10,11 @@
 //Calling convention on x86-64 System V ABI
 //rdi, rsi, rdx, rcx for ints
 
+void page_fault(void) {
+	terminal_printf("Fault");
+	assert(0!=0);
+}
+
 void kernel_main(uintptr_t pmultiboot) {
 	init_terminal();
 
@@ -19,10 +24,14 @@ void kernel_main(uintptr_t pmultiboot) {
 	keyboard_init();
 	add_interrupt_handler(0x21, keyboard_interrupt);
 
+	add_interrupt_handler(0x0e, page_fault);
+
 	init_multiboot_data(pmultiboot);
 
 	init_allocator(&data);
 
+
+	remap_kernel();
 	//test();
 
 
