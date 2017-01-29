@@ -22,6 +22,24 @@ struct page_table_entry {
     uintptr_t entry;
 };
 
+static int64_t read_tlb() {
+    int64_t val;
+    asm volatile ("mov %%cr3, %0" : "=r"(val));
+    return val;
+}
+
+static void write_tlb(int64_t val) {
+    asm volatile ("mov %0, %%cr3" : : "r"(val));
+}
+
+static void flush_tlb() {
+    write_tlb(read_tlb());
+}
+
+void invalidate_page() {
+    assert(0 != 0);
+}
+
 #define PAGE_TABLE_ENTRY_COUNT 512
 
 struct page_table {
@@ -134,8 +152,7 @@ physical_addr translate(virtual_addr vaddr) {
      return (f.number * PAGE_SIZE) + (vaddr % PAGE_SIZE);
 }
 
-struct page_table* get_next_page_table_or_create(struct page_table* table, uint8_t index) {
-
+struct page_table* get_next_page_table_or_create(struct page_table* table, uint16_t index) {
     struct page_table* tbl = descened_page_table(table, index);
 
     if(tbl == NULL) {
@@ -144,6 +161,7 @@ struct page_table* get_next_page_table_or_create(struct page_table* table, uint8
         
         if(success == 0) {
             set_page_table_entry(&table->entries[index], &frame, present_mask | writeable_mask);
+            flush_tlb();
         }
     }
 
@@ -172,15 +190,6 @@ void identity_map_page(struct frame *frame, uintptr_t flags) {
     map_page_to_frame(&p, frame, flags);
 }
 
-void flush_tlb() {
-    assert(0 != 0);
-    //todo implement this
-}
-
-void invalidate_page() {
-    assert(0 != 0);
-}
-
 void unmap_page(struct page *page) {
     struct page_table* table = p4_table;
 
@@ -197,33 +206,98 @@ void unmap_page(struct page *page) {
     flush_tlb();
 }
 
-/*
+static intptr_t get_p4_table_phys_addr() {
+    size_t cr3;
+    //get the p4 physical address from the CR3 register
+    asm volatile (
+        "mov %%cr3, %%rax\n" 
+        "mov %%rax, %0"
+        : "=m"(cr3)
+        : 
+        : "%rax");
+
+    return cr3;
+}
+
 void remap_kernel() {
-    struct page p;
-    p.number = 0xdeadbeef;
+    struct page page;
+    page.number = 0xdeadbeef;
 
     struct frame new_p4_frame;
-    allocate_frame(&new_p4_frame);
 
-    map_page_to_frame(page, &new_p4_frame, present_mask | writeable_mask);
+    int success = allocate_frame(&new_p4_frame);
+    terminal_printf("Allocation %x", success);
+
+    map_page_to_frame(&page, &new_p4_frame, present_mask | writeable_mask);
+
+    terminal_printf("Mapped frame\n");
+
+    flush_tlb();
+
+    init_page_table(page.number*PAGE_SIZE);
+
+    terminal_printf("Offset %#zx\n", *(uintptr_t*)(page.number*PAGE_SIZE));
+    terminal_printf("Offset %#zx\n", *(uintptr_t*)(page.number*PAGE_SIZE + 0x8));
+    terminal_printf("Offset %#zx\n", *(uintptr_t*)(page.number*PAGE_SIZE + 0x10));
+    terminal_printf("Offset %#zx\n", *(uintptr_t*)(page.number*PAGE_SIZE + 0x18));
+    terminal_printf("Offset %#zx\n", *(uintptr_t*)(page.number*PAGE_SIZE + (0x8 * 511)));
+    
+    terminal_printf("Frame addr %#zx\n", get_frame_start_addr(&new_p4_frame));
+
+    set_page_table_entry(page.number*PAGE_SIZE + (0x8 * 511), &new_p4_frame, present_mask | writeable_mask);
+    terminal_printf("Offset new %#zx\n", *(uintptr_t*)(page.number*PAGE_SIZE + (0x8 * 511)));
+
 
     struct page_table new_p4_table = *(struct page_table*)(&new_p4_frame);
-    init_page_table(&new_p4_table);
 
-    set_page_table_entry(&new_p4_table->entries[511], &new_p4_frame, present_mask | writeable_mask);
+    struct frame curr_p4_frame;
+    intptr_t addr = get_p4_table_phys_addr();
+    get_frame_for_addr(&curr_p4_frame, addr);
 
-    unmap_page(p);
+    //set_page_table_entry(&new_p4_table.entries[511], &new_p4_frame, present_mask | writeable_mask);
 
-    for each section in multiboot->elfsections {
-        for each frame in section {
-            table.identity_map_page(&frame, present_mask | writeable_mask);
+    //set_page_table_entry(&p4_table->entries[511], &new_p4_frame, present_mask | writeable_mask);
+
+    terminal_printf("flushing tlb\n");
+    flush_tlb();
+
+    terminal_printf("Flushed tlb");
+
+    struct multiboot_elf_section_header* section;
+    for(int i=0; i<data.elf_symbols->num; ++i) {
+        section = &data.elf_symbols->sectionheaders[i];
+
+        if(!elf_section_is_allocated(section)) {
+            continue;
+        }
+
+        struct frame frame;
+        uintptr_t addr = section->sh_addr;
+        uintptr_t end_addr = section->sh_addr + section->sh_size - 1;
+
+        assert(addr % PAGE_SIZE == 0);
+        assert(addr <= end_addr);
+
+        while(addr < end_addr) {
+            //get_frame_for_addr(&frame, addr);
+            addr += PAGE_SIZE;
+            //identity_map_page(&frame, writeable_mask);
         }
     }
 
-    activate_page_table(&table);
-    create_guard_page_for_stack();
+    terminal_printf("New kernel page tables set up.");
+
+    //restore old p4
+    //set_page_table_entry(&p4_table->entries[511], &curr_p4_frame, present_mask | writeable_mask);
+
+    //flush_tlb();
+
+    //unmap_page(&page);
+
+    //activate_page_table(&table);
+    //create_guard_page_for_stack();
 }
-*/
+
 void test(void) {
     terminal_printf("Translation for 0x0 is: %#zx\n", translate(0));
 
