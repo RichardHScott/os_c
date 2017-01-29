@@ -223,3 +223,7 @@ uintptr_t find_next_tag_address(struct multiboot_tag* curr_tag) {
         return NULL;
     }
 }
+
+bool elf_section_is_allocated(struct multiboot_elf_section_header *header) {
+    return header->sh_flags & shf_alloc;
+}

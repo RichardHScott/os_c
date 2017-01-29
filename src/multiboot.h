@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 
 // multiboot2 header structure
 // http://nongnu.askapache.com/grub/phcoder/multiboot.pdf
@@ -97,6 +98,8 @@ struct multiboot_elf_section_header {
     uint64_t sh_addralign;
     uint64_t sh_entsize;
 } __attribute__ ((packed));
+
+bool elf_section_is_allocated(struct multiboot_elf_section_header *header);
 
 struct multiboot_elf_symbols {
     uint32_t type;
