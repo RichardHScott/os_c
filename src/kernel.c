@@ -23,16 +23,15 @@ void kernel_main(uintptr_t pmultiboot) {
 
 	keyboard_init();
 	add_interrupt_handler(0x21, keyboard_interrupt);
-
 	add_interrupt_handler(0x0e, page_fault);
 
 	init_multiboot_data(pmultiboot);
 
 	init_allocator(&data);
 
-
-	//test();
 	remap_kernel();
+	init_multiboot_data(pmultiboot);
+	//test();
 
 	while(1) {
 		// struct frame f;
@@ -46,6 +45,8 @@ void kernel_main(uintptr_t pmultiboot) {
 		size_t baz = 0xcafebabecafebabe;
 		//terminal_printf("\ntest\ntest2\ntest3\n%x\n%3X\n%#x\n%X\n%zx", foo, foo, bar, bar, baz);
 
-		for(int k = 0; k < 500000000; ++k) {}
+		for(int k = 0; k < 1000000000; ++k) {}
+
+
 	}
 }

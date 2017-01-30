@@ -213,53 +213,33 @@ static intptr_t get_p4_table_phys_addr() {
 void remap_kernel() {
     struct page page;
     page.number = 0xdeadbeef;
-
     struct frame new_p4_frame;
-
     int success = allocate_frame(&new_p4_frame);
     terminal_printf("Allocation %x\n", success);
-
     map_page_to_frame(&page, &new_p4_frame, present_mask | writeable_mask);
-
     terminal_printf("Mapped frame\n");
 
-    //backup old page
     struct page old_p4_page;
     old_p4_page.number = 0xdddd0000;
     struct frame old_p4_frame;
     get_frame_for_addr(&old_p4_frame, (uintptr_t)read_tlb());
     terminal_printf("Old page addr: %#zx\n", old_p4_frame.number);
     map_page_to_frame(&old_p4_page, &old_p4_frame, present_mask | writeable_mask);    
-
     flush_tlb();
-    struct page_table *old_p4_table = old_p4_page.number * PAGE_SIZE;
 
+    struct page_table *old_p4_table = old_p4_page.number * PAGE_SIZE;
     init_page_table(page.number*PAGE_SIZE);
 
-    terminal_printf("Offset %#zx\n", *(uintptr_t*)(page.number*PAGE_SIZE));
-    terminal_printf("Offset %#zx\n", *(uintptr_t*)(page.number*PAGE_SIZE + 0x8));
-    terminal_printf("Offset %#zx\n", *(uintptr_t*)(page.number*PAGE_SIZE + (8 * 511)));
-    
     terminal_printf("CR3 = %#zx\n", read_tlb());
     terminal_printf("Old p4 entry[511] %#zX\n", p4_table->entries[511]);
-    terminal_printf("Frame addr %#zX\n", get_frame_start_addr(&new_p4_frame));
+    terminal_printf("Old p4 entry[511] %#zX\n", old_p4_table->entries[511]);
+    terminal_printf("New p4 frame addr %#zX\n", get_frame_start_addr(&new_p4_frame));
 
     set_page_table_entry(page.number*PAGE_SIZE + (8 * 511), &new_p4_frame, present_mask | writeable_mask);
-    terminal_printf("Offset new %#zX\n", *(uintptr_t*)(page.number*PAGE_SIZE + (8 * 511)));
 
-    struct page_table *new_p4_table = (struct page_table*)(page.number*PAGE_SIZE);
-
-    terminal_printf("old p4 frame number %#zX\n", old_p4_frame.number);
-    terminal_printf("Old p4 entry[511] %#zX\n", p4_table->entries[511]);
-    terminal_printf("Old p4 entry[511] %#zX\n", old_p4_table->entries[511]);
-    
     set_page_table_entry(&p4_table->entries[511], &new_p4_frame, present_mask | writeable_mask);
     terminal_printf("new p4 entry[511] %#zX\n", p4_table->entries[511]);
-
-    terminal_printf("flushing tlb\n");
     flush_tlb();
-
-    terminal_printf("Flushed tlb\n");
 
     struct multiboot_elf_section_header* section;
     for(int i=0; i<data.elf_symbols->num; ++i) {
@@ -278,10 +258,22 @@ void remap_kernel() {
         assert(addr <= end_addr);
 
         while(addr < end_addr) {
-            //get_frame_for_addr(&frame, addr);
+            get_frame_for_addr(&frame, addr);
             addr += PAGE_SIZE;
-            //identity_map_page(&frame, writeable_mask);
+            identity_map_page(&frame, writeable_mask | present_mask);
         }
+    }
+
+    //id map the vga buffer
+    struct frame vga_frame;
+    get_frame_for_addr(&vga_frame, 0xb8000);
+    identity_map_page(&vga_frame, writeable_mask | present_mask);
+
+    //id map the multiboot structure
+    for(intptr_t mboot_addr = (intptr_t)data.start % PAGE_SIZE; mboot_addr <= data.start + data.start->total_size; mboot_addr += PAGE_SIZE) {
+        struct frame mboot_frame;
+        get_frame_for_addr(&mboot_frame, mboot_addr);
+        identity_map_page(&mboot_frame, present_mask | writeable_mask);
     }
 
     terminal_printf("New kernel page tables set up.\n");
@@ -291,7 +283,14 @@ void remap_kernel() {
     flush_tlb();
     terminal_printf("Old p4 entry[511] %#zX\n", p4_table->entries[511]);
 
-    unmap_page(&page);
+    unmap_page(&old_p4_page);
+
+    write_tlb(new_p4_frame.number*PAGE_SIZE | present_mask | writeable_mask);
+    flush_tlb();
+
+    int k = 0;
+    ++k;
+    ++k;
 
     //activate_page_table(&table);
     //create_guard_page_for_stack();

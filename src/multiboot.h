@@ -210,9 +210,9 @@ struct multiboot_start* start;
 struct multiboot_memory_information *mem_info;
 
 struct multiboot_data {
-    struct multiboot* start;
-    struct multiboot_memory_map* memory_map;
-    struct multiboot_elf_symbols* elf_symbols;
+    struct multiboot_start *start;
+    struct multiboot_memory_map *memory_map;
+    struct multiboot_elf_symbols *elf_symbols;
 };
 
 struct multiboot_data data;
