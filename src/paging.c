@@ -207,16 +207,7 @@ void unmap_page(struct page *page) {
 }
 
 static intptr_t get_p4_table_phys_addr() {
-    size_t cr3;
-    //get the p4 physical address from the CR3 register
-    asm volatile (
-        "mov %%cr3, %%rax\n" 
-        "mov %%rax, %0"
-        : "=m"(cr3)
-        : 
-        : "%rax");
-
-    return cr3;
+    return read_tlb();
 }
 
 void remap_kernel() {
@@ -226,42 +217,49 @@ void remap_kernel() {
     struct frame new_p4_frame;
 
     int success = allocate_frame(&new_p4_frame);
-    terminal_printf("Allocation %x", success);
+    terminal_printf("Allocation %x\n", success);
 
     map_page_to_frame(&page, &new_p4_frame, present_mask | writeable_mask);
 
     terminal_printf("Mapped frame\n");
 
+    //backup old page
+    struct page old_p4_page;
+    old_p4_page.number = 0xdddd0000;
+    struct frame old_p4_frame;
+    get_frame_for_addr(&old_p4_frame, (uintptr_t)read_tlb());
+    terminal_printf("Old page addr: %#zx\n", old_p4_frame.number);
+    map_page_to_frame(&old_p4_page, &old_p4_frame, present_mask | writeable_mask);    
+
     flush_tlb();
+    struct page_table *old_p4_table = old_p4_page.number * PAGE_SIZE;
 
     init_page_table(page.number*PAGE_SIZE);
 
     terminal_printf("Offset %#zx\n", *(uintptr_t*)(page.number*PAGE_SIZE));
     terminal_printf("Offset %#zx\n", *(uintptr_t*)(page.number*PAGE_SIZE + 0x8));
-    terminal_printf("Offset %#zx\n", *(uintptr_t*)(page.number*PAGE_SIZE + 0x10));
-    terminal_printf("Offset %#zx\n", *(uintptr_t*)(page.number*PAGE_SIZE + 0x18));
-    terminal_printf("Offset %#zx\n", *(uintptr_t*)(page.number*PAGE_SIZE + (0x8 * 511)));
+    terminal_printf("Offset %#zx\n", *(uintptr_t*)(page.number*PAGE_SIZE + (8 * 511)));
     
-    terminal_printf("Frame addr %#zx\n", get_frame_start_addr(&new_p4_frame));
+    terminal_printf("CR3 = %#zx\n", read_tlb());
+    terminal_printf("Old p4 entry[511] %#zX\n", p4_table->entries[511]);
+    terminal_printf("Frame addr %#zX\n", get_frame_start_addr(&new_p4_frame));
 
-    set_page_table_entry(page.number*PAGE_SIZE + (0x8 * 511), &new_p4_frame, present_mask | writeable_mask);
-    terminal_printf("Offset new %#zx\n", *(uintptr_t*)(page.number*PAGE_SIZE + (0x8 * 511)));
+    set_page_table_entry(page.number*PAGE_SIZE + (8 * 511), &new_p4_frame, present_mask | writeable_mask);
+    terminal_printf("Offset new %#zX\n", *(uintptr_t*)(page.number*PAGE_SIZE + (8 * 511)));
 
+    struct page_table *new_p4_table = (struct page_table*)(page.number*PAGE_SIZE);
 
-    struct page_table new_p4_table = *(struct page_table*)(&new_p4_frame);
-
-    struct frame curr_p4_frame;
-    intptr_t addr = get_p4_table_phys_addr();
-    get_frame_for_addr(&curr_p4_frame, addr);
-
-    //set_page_table_entry(&new_p4_table.entries[511], &new_p4_frame, present_mask | writeable_mask);
-
-    //set_page_table_entry(&p4_table->entries[511], &new_p4_frame, present_mask | writeable_mask);
+    terminal_printf("old p4 frame number %#zX\n", old_p4_frame.number);
+    terminal_printf("Old p4 entry[511] %#zX\n", p4_table->entries[511]);
+    terminal_printf("Old p4 entry[511] %#zX\n", old_p4_table->entries[511]);
+    
+    set_page_table_entry(&p4_table->entries[511], &new_p4_frame, present_mask | writeable_mask);
+    terminal_printf("new p4 entry[511] %#zX\n", p4_table->entries[511]);
 
     terminal_printf("flushing tlb\n");
     flush_tlb();
 
-    terminal_printf("Flushed tlb");
+    terminal_printf("Flushed tlb\n");
 
     struct multiboot_elf_section_header* section;
     for(int i=0; i<data.elf_symbols->num; ++i) {
@@ -275,6 +273,7 @@ void remap_kernel() {
         uintptr_t addr = section->sh_addr;
         uintptr_t end_addr = section->sh_addr + section->sh_size - 1;
 
+        terminal_printf("Addr: %#zx\n", addr);
         assert(addr % PAGE_SIZE == 0);
         assert(addr <= end_addr);
 
@@ -285,17 +284,19 @@ void remap_kernel() {
         }
     }
 
-    terminal_printf("New kernel page tables set up.");
+    terminal_printf("New kernel page tables set up.\n");
 
     //restore old p4
-    //set_page_table_entry(&p4_table->entries[511], &curr_p4_frame, present_mask | writeable_mask);
+    set_page_table_entry(&old_p4_table->entries[511], &old_p4_frame, present_mask | writeable_mask);
+    flush_tlb();
+    terminal_printf("Old p4 entry[511] %#zX\n", p4_table->entries[511]);
 
-    //flush_tlb();
-
-    //unmap_page(&page);
+    unmap_page(&page);
 
     //activate_page_table(&table);
     //create_guard_page_for_stack();
+
+    terminal_printf("End of remap.\n");
 }
 
 void test(void) {

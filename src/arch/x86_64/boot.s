@@ -99,11 +99,6 @@ check_long_mode:
     jmp error
 
 set_up_page_tables:
-    ;recusively map last page to itself
-    mov eax, p4_table
-    or eax, 0b11
-    mov [p4_table + 8*511], eax
-
     ; map first first p3 entry into p4 table
     mov eax, p3_table
     or eax, 0b11 ;page present and writeable

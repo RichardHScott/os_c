@@ -31,9 +31,8 @@ void kernel_main(uintptr_t pmultiboot) {
 	init_allocator(&data);
 
 
-	remap_kernel();
 	//test();
-
+	remap_kernel();
 
 	while(1) {
 		// struct frame f;
@@ -47,6 +46,6 @@ void kernel_main(uintptr_t pmultiboot) {
 		size_t baz = 0xcafebabecafebabe;
 		//terminal_printf("\ntest\ntest2\ntest3\n%x\n%3X\n%#x\n%X\n%zx", foo, foo, bar, bar, baz);
 
-		for(int k = 0; k < 50000000; ++k) {}
+		for(int k = 0; k < 500000000; ++k) {}
 	}
 }
