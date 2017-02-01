@@ -11,11 +11,6 @@ static intptr_t align_addr(intptr_t addr, size_t alignment)  {
 
 struct free_node {
     struct free_node *next;
-    size_t free_size;
-} __attribute__ ((packed));
-
-struct alloc_node {
-    intptr_t unused;
     size_t size;
 } __attribute__ ((packed));
 
@@ -33,33 +28,35 @@ void init_heap(void) {
 
     free_list_head = (struct free_node*) heap_addr;
     free_list_head->next = NULL;
-    free_list_head->free_size = heap_size;
+    free_list_head->size = heap_size;
 }
 
-struct alloc_node* allocate_memory(size_t required_bytes) {
-    struct alloc_node *alloc_node = NULL;
+struct free_node* allocate_memory(size_t required_bytes) {
+    struct free_node *alloc_node = NULL;
     struct free_node *node = free_list_head;
 
     while(node->next != NULL) {
-        if(node->next->free_size <= required_bytes) {
+        if(node->next->size <= required_bytes) {
             struct free_node *old_node = node->next;
-            struct free_node *new_next_node = node->next;
+            struct free_node *new_next_node = node->next->next;
 
-            size_t new_free_bytes = old_node->next->free_size - required_bytes;
+            terminal_printf("Old size: %zx\n", old_node->size);
+
+            size_t new_free_bytes = old_node->size - required_bytes;
             if(new_free_bytes < minimum_alloc_size) {
-                required_bytes = old_node->next->free_size;
-                new_next_node = old_node->next;
+                required_bytes = old_node->size;
                 new_free_bytes = 0;
             }
 
             if(new_free_bytes) {
+                terminal_printf("New free bytes: %zx\n", new_free_bytes);
                 new_next_node = (intptr_t) old_node + sizeof(old_node) + required_bytes;
-                new_next_node->free_size = new_free_bytes - sizeof(new_next_node);
+                new_next_node->size = new_free_bytes - sizeof(struct free_node);
                 new_next_node->next = old_node->next;
             }
 
-            alloc_node = (struct alloc_node*) old_node;
-            alloc_node->unused = NULL;
+            alloc_node = old_node;
+            alloc_node->next = NULL;
             alloc_node->size = required_bytes;
 
             node->next = new_next_node;
@@ -71,13 +68,13 @@ struct alloc_node* allocate_memory(size_t required_bytes) {
 
     if(!alloc_node) {
         struct free_node *old_head = free_list_head;
-        struct free_node *new_head = (intptr_t) old_head + sizeof(old_head) + required_bytes;
+        struct free_node *new_head = (intptr_t) old_head + sizeof(struct free_node) + required_bytes;
         
-        new_head->free_size = old_head->free_size - required_bytes;
+        new_head->size = old_head->size - required_bytes;
         new_head->next = old_head->next;
 
-        alloc_node = (struct alloc_node*) old_head;
-        alloc_node->unused = NULL;
+        alloc_node = old_head;
+        alloc_node->next = NULL;
         alloc_node->size = required_bytes;
 
         free_list_head = new_head;
@@ -86,6 +83,16 @@ struct alloc_node* allocate_memory(size_t required_bytes) {
     return alloc_node;
 }
 
+intptr_t kmalloc(size_t bytes) {
+    size_t alignment = 8;
+
+    size_t req_bytes = bytes;
+
+    struct free_node *node = allocate_memory(req_bytes);
+
+    return (intptr_t) node + sizeof(struct free_node);
+}
+/*
 intptr_t kmalloc(size_t bytes) {
     size_t alignment = 0;
     intptr_t new_addr = align_addr(heap_addr, alignment);
@@ -98,12 +105,14 @@ intptr_t kmalloc(size_t bytes) {
     heap_addr = new_head_addr;
 
     return new_addr;
-}
+}*/
 
 intptr_t krealloc(intptr_t old_ptr, size_t bytes) {
 
 }
 
 void kfree(intptr_t addr) {
-
+    struct free_node *node = (struct free_node*) (addr - sizeof(struct free_node));
+    node->next = free_list_head->next;
+    free_list_head->next = node;
 }

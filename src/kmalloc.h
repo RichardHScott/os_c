@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include "paging.h"
+#include "terminal.h"
 #pragma once
 
 void init_heap(void);

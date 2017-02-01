@@ -16,6 +16,10 @@ void page_fault(void) {
 	assert(0!=0);
 }
 
+static void loop(void) {
+	for(int k = 0; k < 100000000; ++k) {}
+}
+
 void kernel_main(uintptr_t pmultiboot) {
 	init_terminal();
 
@@ -36,6 +40,9 @@ void kernel_main(uintptr_t pmultiboot) {
 	init_heap();
 	//test();
 
+	int ptr_cnt = 0;
+	intptr_t ptrs[10];
+	
 	while(1) {
 		// struct frame f;
 		// allocate_frame(&f);
@@ -48,10 +55,17 @@ void kernel_main(uintptr_t pmultiboot) {
 		size_t baz = 0xcafebabecafebabe;
 		//terminal_printf("\ntest\ntest2\ntest3\n%x\n%3X\n%#x\n%X\n%zx", foo, foo, bar, bar, baz);
 
-		for(int k = 0; k < 100000000; ++k) {
-		}
+		loop();
 
 		intptr_t addr = kmalloc(0x100);
 		terminal_printf("Addr %#zX\n", addr);
+		if(ptr_cnt < 10) {
+			ptrs[ptr_cnt++] = addr;
+		} else {
+			for(int i=0; i < 10; ++i) {
+				kfree(ptrs[i]);
+			}
+			ptr_cnt = 0;
+		}
 	}
 }
