@@ -4,6 +4,7 @@
 #include "keyboard.h"
 #include "frame_allocator.h"
 #include "paging.h"
+#include "kmalloc.h"
 
 #include "assert.h"
 
@@ -31,6 +32,8 @@ void kernel_main(uintptr_t pmultiboot) {
 
 	remap_kernel();
 	init_multiboot_data(pmultiboot);
+
+	init_heap();
 	//test();
 
 	while(1) {
@@ -45,8 +48,10 @@ void kernel_main(uintptr_t pmultiboot) {
 		size_t baz = 0xcafebabecafebabe;
 		//terminal_printf("\ntest\ntest2\ntest3\n%x\n%3X\n%#x\n%X\n%zx", foo, foo, bar, bar, baz);
 
-		for(int k = 0; k < 1000000000; ++k) {}
+		for(int k = 0; k < 100000000; ++k) {
+		}
 
-
+		intptr_t addr = kmalloc(0x100);
+		terminal_printf("Addr %#zX\n", addr);
 	}
 }

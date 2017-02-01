@@ -1,9 +1,5 @@
 #include "paging.h"
 
-struct page {
-    size_t number;
-};
-
 const uintptr_t present_mask = 0x1;
 const uintptr_t writeable_mask = 0x2;
 const uintptr_t user_access_mask = 0x4;
@@ -17,10 +13,6 @@ const uintptr_t available_mask = 0xe;
 const uintptr_t physical_addr_mask = 0x000ffffffffff000;
 const uintptr_t os_defined_mask = 0x7ff0000000000000;
 const uintptr_t no_exec_mask = 0x8000000000000000;
-
-struct page_table_entry {
-    uintptr_t entry;
-};
 
 static int64_t read_tlb() {
     int64_t val;
@@ -37,14 +29,9 @@ static void flush_tlb() {
 }
 
 void invalidate_page() {
+    //invpg instruction
     assert(0 != 0);
 }
-
-#define PAGE_TABLE_ENTRY_COUNT 512
-
-struct page_table {
-    struct page_table_entry entries[PAGE_TABLE_ENTRY_COUNT];
-} __attribute__((packed));
 
 void set_unused(struct page_table_entry* entry) {
     entry->entry = 0x0;
@@ -89,13 +76,8 @@ int get_physical_frame(struct page_table_entry *entry, struct frame *f) {
     return -1;
 }
 
-typedef uintptr_t virtual_addr;
-typedef uintptr_t physical_addr;
-
-void get_page_for_vaddr(virtual_addr vaddr, struct page* p) {
-    if(vaddr >= 0x0000800000000000 && vaddr < 0xffff800000000000 ) {
-        //invalid page, bit 48 must be sign extended
-    }
+void get_page_for_vaddr(virtual_addr_t vaddr, struct page* p) {
+    assert(vaddr < 0x0000800000000000 || vaddr >= 0xffff800000000000);
 
     p->number = vaddr / PAGE_SIZE;
 }
@@ -143,7 +125,7 @@ int translate_page(struct page *page, struct frame *frame) {
     return get_physical_frame(&table->entries[get_p1_index(page)], frame);
 }
 
-physical_addr translate(virtual_addr vaddr) {
+physical_addr_t translate(virtual_addr_t vaddr) {
      struct page page;
      struct frame f;
      get_page_for_vaddr(vaddr, &page);
@@ -287,13 +269,11 @@ void remap_kernel() {
 
     write_tlb(new_p4_frame.number*PAGE_SIZE | present_mask | writeable_mask);
     flush_tlb();
-
-    int k = 0;
-    ++k;
-    ++k;
-
-    //activate_page_table(&table);
-    //create_guard_page_for_stack();
+    
+    //create guard page from old p4 frame
+    struct page guard_page;
+    guard_page.number = old_p4_frame.number;
+    unmap_page(&guard_page);
 
     terminal_printf("End of remap.\n");
 }
