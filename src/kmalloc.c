@@ -9,10 +9,8 @@ static intptr_t align_addr(intptr_t addr, size_t alignment)  {
     return (alignment) ? ((addr+alignment-1) & ~(alignment-1)) : (addr);
 }
 
-const size_t minimum_alloc_size = sizeof(struct free_node) + 4*sizeof(uintptr_t);
-
 struct free_node {
-    struct *free_node next;
+    struct free_node *next;
     size_t free_size;
 } __attribute__ ((packed));
 
@@ -20,6 +18,8 @@ struct alloc_node {
     intptr_t unused;
     size_t size;
 } __attribute__ ((packed));
+
+const size_t minimum_alloc_size = sizeof(struct free_node) + 4*sizeof(uintptr_t);
 
 static struct free_node *free_list_head;
 
@@ -31,16 +31,17 @@ void init_heap(void) {
         map_page(&page, present_mask | writeable_mask);
     }
 
-    free_node = heap_addr;
-    free_node->next = NULL;
-    free_node->free_size = heap_size;
+    free_list_head = (struct free_node*) heap_addr;
+    free_list_head->next = NULL;
+    free_list_head->free_size = heap_size;
 }
 
-struct alloc_node* allocate_memory(size_t requried_bytes {
-    struct alloc_node* alloc_node = NULL;
+struct alloc_node* allocate_memory(size_t required_bytes) {
+    struct alloc_node *alloc_node = NULL;
+    struct free_node *node = free_list_head;
 
-    while(node->next != NULL {
-        if(node->next->free_size <= bytes_required) {
+    while(node->next != NULL) {
+        if(node->next->free_size <= required_bytes) {
             struct free_node *old_node = node->next;
             struct free_node *new_next_node = node->next;
 
@@ -52,18 +53,19 @@ struct alloc_node* allocate_memory(size_t requried_bytes {
             }
 
             if(new_free_bytes) {
-                new_next_node = (intptr_t) old_node + sizeof(struct free_node) + required_bytes;
-                new_next_node->free_size = new_free_bytes - sizeof(struct free_node);
+                new_next_node = (intptr_t) old_node + sizeof(old_node) + required_bytes;
+                new_next_node->free_size = new_free_bytes - sizeof(new_next_node);
                 new_next_node->next = old_node->next;
             }
 
             alloc_node = (struct alloc_node*) old_node;
-            old_node->unused = NULL;
-            old_node->size = required_bytes;
+            alloc_node->unused = NULL;
+            alloc_node->size = required_bytes;
 
             node->next = new_next_node;
             break;
         }
+
         node = node->next;
     }
 

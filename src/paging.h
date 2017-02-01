@@ -5,6 +5,22 @@
 #include "assert.h"
 #include <stdbool.h>
 #include "multiboot.h"
+/*
+enum paging_masks {
+    present_bit = 0x1,
+    writeable_bit = 0x2,
+    user_access_bit = 0x4,
+    write_through_cache_bit = 0x8,
+    disable_cache_bit = 0x10,
+    accessed_bit = 0x20,
+    dirty_bit = 0x40,
+    huge_bit = 0x80,
+    global_bit = 0x100,
+    available_mask = 0xe,
+    physical_addr_mask = 0x000ffffffffff000,
+    os_defined_mask = 0x7ff0000000000000,
+    no_exec_bit = 0x8000000000000000
+};*/
 
 const uintptr_t present_mask;
 const uintptr_t writeable_mask;

@@ -14,6 +14,8 @@ const uintptr_t physical_addr_mask = 0x000ffffffffff000;
 const uintptr_t os_defined_mask = 0x7ff0000000000000;
 const uintptr_t no_exec_mask = 0x8000000000000000;
 
+const struct page_table* p4_table = 0xfffffffffffff000;
+
 static int64_t read_tlb() {
     int64_t val;
     asm volatile ("mov %%cr3, %0" : "=r"(val));
@@ -28,9 +30,11 @@ static void flush_tlb() {
     write_tlb(read_tlb());
 }
 
-void invalidate_page() {
-    //invpg instruction
-    assert(0 != 0);
+static void invalidate_page(intptr_t addr) {
+    asm volatile("invlpg (%0)"
+                :
+                : "r"(addr)
+                : "memory");
 }
 
 void set_unused(struct page_table_entry* entry) {
@@ -42,8 +46,6 @@ void init_page_table(struct page_table* table) {
         set_unused(&table->entries[i]);
     }
 }
-
-const struct page_table* p4_table = 0xfffffffffffff000;
 
 struct page_table* descened_page_table(struct page_table *table, size_t index) {
     if(index >= 512) {
