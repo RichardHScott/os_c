@@ -20,6 +20,10 @@ static void loop(void) {
 	for(int k = 0; k < 100000000; ++k) {}
 }
 
+static void loop_small(void) {
+	for(int k = 0; k < 50000000; ++k) {}
+}
+
 void kernel_main(uintptr_t pmultiboot) {
 	init_terminal();
 
@@ -40,6 +44,26 @@ void kernel_main(uintptr_t pmultiboot) {
 	init_heap();
 	//test();
 
+	intptr_t addr1 = kmalloc(0x100);
+	terminal_printf("Addr1 %#zX\n", addr1);
+	loop_small();
+	intptr_t addr2 = kmalloc(0x200);
+	terminal_printf("Addr2 %#zX\n", addr2);
+	loop_small();
+	intptr_t addr3 = kmalloc(0x100);
+	terminal_printf("Addr3 %#zX\n", addr3);
+	kfree(addr2);
+	intptr_t addr = kmalloc(0x20);
+	terminal_printf("Addr4 %#zX\n", addr);
+	loop_small();
+	addr = kmalloc(0x40);
+	terminal_printf("Addr5 %#zX\n", addr);
+	loop_small();
+	addr = kmalloc(0x50);
+	terminal_printf("Addr6 %#zX\n", addr);
+	loop_small();
+
+
 	int ptr_cnt = 0;
 	intptr_t ptrs[10];
 	
@@ -57,7 +81,7 @@ void kernel_main(uintptr_t pmultiboot) {
 
 		loop();
 
-		intptr_t addr = kmalloc(0x100);
+		intptr_t addr = kmalloc(0x10*(1+ptr_cnt));
 		terminal_printf("Addr %#zX\n", addr);
 		if(ptr_cnt < 10) {
 			ptrs[ptr_cnt++] = addr;
