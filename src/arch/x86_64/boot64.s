@@ -2,9 +2,6 @@ global long_mode_start
 global asm_add_interrupt_handler
 
 extern kernel_main
-extern print_char
-extern print_hex_uint64
-extern print_newline
 
 global i_ok
 

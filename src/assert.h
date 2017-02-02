@@ -1,7 +1,7 @@
 #pragma once
 
 #ifdef NDEBUG
-#define assert(EX) 
+#define assert(EX) (void) 0
 #else
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)

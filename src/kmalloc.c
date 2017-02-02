@@ -18,6 +18,16 @@ const size_t minimum_alloc_size = sizeof(struct free_node) + 4*sizeof(uintptr_t)
 
 static struct free_node *free_list_head;
 
+static void compact_heap() {
+    struct free_node *node = free_list_head;
+
+    while(node != NULL) {
+        
+
+        node = node->next;
+    }
+}
+
 void init_heap(void) {
     heap_addr = heap_start_addr;
     for(virtual_addr_t addr = heap_start_addr; addr < heap_start_addr + heap_size; addr += PAGE_SIZE) {
@@ -92,20 +102,6 @@ intptr_t kmalloc(size_t bytes) {
 
     return (intptr_t) node + sizeof(struct free_node);
 }
-/*
-intptr_t kmalloc(size_t bytes) {
-    size_t alignment = 0;
-    intptr_t new_addr = align_addr(heap_addr, alignment);
-    intptr_t new_head_addr = new_addr + bytes;
-
-    if(new_head_addr > (heap_start_addr + heap_size)) {
-        return NULL;
-    }
-
-    heap_addr = new_head_addr;
-
-    return new_addr;
-}*/
 
 intptr_t krealloc(intptr_t old_ptr, size_t bytes) {
 

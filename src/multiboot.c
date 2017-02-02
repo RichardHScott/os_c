@@ -126,7 +126,7 @@ void parse_multiboot_data(uintptr_t pstart) {
         }
     } while((curr_tag = find_next_tag_address(curr_tag)) != NULL);
 
-    //print_elf_symbols();
+    print_elf_symbols();
 }
 
 const char *ef_sh_flags_str[] = { "", "W", "A", "X", "M", "S", "IL", "LO", "OS", "G", "T", "MO", "MP", "ORD", "EXC" };

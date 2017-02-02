@@ -54,7 +54,6 @@ struct page_table {
     struct page_table_entry entries[PAGE_TABLE_ENTRY_COUNT];
 } __attribute__((packed));
 
-void test(void);
 void remap_kernel(void);
 
 void get_page_for_vaddr(virtual_addr_t vaddr, struct page* p);

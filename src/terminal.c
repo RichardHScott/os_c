@@ -1,5 +1,7 @@
 #include "terminal.h"
 
+const int tab_space_num = 4;
+
 static Terminal terminal;
 
 static inline vga_color make_vga_color(vga_color_code fg, vga_color_code bg) {
@@ -92,6 +94,21 @@ void print_text(const char* text) {
 			print_newline();
 		} else {
 			terminal_put_char(make_vga_char(text[i], terminal.default_color));
+		}
+	}
+}
+
+static void print_tab() {
+	size_t cur_col = terminal.row;
+	size_t spaces_needed = tab_space_num - (cur_col % tab_space_num);
+
+	if(spaces_needed + cur_col >= ROW_MAX) {
+		print_newline();
+	} else {
+		vga_char sp = make_vga_char(' ', terminal.default_color);
+
+		for(int i=0; i < spaces_needed; ++i) {
+			terminal_put_char(sp);
 		}
 	}
 }
@@ -464,8 +481,6 @@ static void print_double(struct printf_format* format, double data) {
 
 }
 
-const int tab_space_num = 4;
-
 void terminal_printf(const char* str, ...) {
 	int curr_arg = 0;
 	va_list args;
@@ -554,9 +569,7 @@ void terminal_printf(const char* str, ...) {
 		if(str[i] == '\n') {
 			print_newline();
 		} else if(str[i] == '\t') {
-			for(int tab_cnt=0; tab_cnt < tab_space_num; ++tab_cnt) {
-				terminal_put_char(make_vga_char(' ', terminal.default_color));
-			}
+			print_tab();
 		} else {
 			//print normal char
 			terminal_put_char(make_vga_char(str[i], terminal.default_color));

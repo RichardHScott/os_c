@@ -279,22 +279,3 @@ void remap_kernel() {
 
     terminal_printf("End of remap.\n");
 }
-
-void test(void) {
-    terminal_printf("Translation for 0x0 is: %#zx\n", translate(0));
-
-    terminal_printf("Translation for 4096 is: %#zx\n", translate(4096));
-
-    terminal_printf("Translation for 512 * 4096 is: %#zx\n", translate(512 * 4096));
-
-    terminal_printf("Translation for 300 * 512 * 4096 is: %#zx\n", translate(300 * 512 * 4096));
-
-    for(uintptr_t i=0; i<UINTPTR_MAX; ++i) {
-        uintptr_t trans = translate(i);
-        if(i != trans) {
-            
-            terminal_printf("Failed. i: %#zx \t trans: %#zx\n", i, trans);
-            break;
-        }
-    }
-}
