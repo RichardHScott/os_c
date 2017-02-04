@@ -1,1 +1,1 @@
-"C:\Program Files\qemu\qemu-system-x86_64.exe" -cdrom "C:\solutions\os_c\build\os-x86_64.iso" -d int -no-shutdown -no-reboot -s
+"C:\Program Files\qemu\qemu-system-x86_64.exe" -cdrom "C:\solutions\os_c\build\os-x86_64.iso" -d int -no-shutdown -no-reboot -s -monitor telnet:127.0.0.1:2222,server,nowait
