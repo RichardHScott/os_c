@@ -227,3 +227,11 @@ uintptr_t find_next_tag_address(struct multiboot_tag* curr_tag) {
 bool elf_section_is_allocated(struct multiboot_elf_section_header *header) {
     return header->sh_flags & shf_alloc;
 }
+
+bool elf_section_is_writable(struct multiboot_elf_section_header *header) {
+    return header->sh_flags & shf_write;
+}
+
+bool elf_section_is_exectuable(struct multiboot_elf_section_header *header) {
+    return header->sh_flags & shf_execinstr;
+}

@@ -5,7 +5,7 @@
 #include "assert.h"
 #include <stdbool.h>
 #include "multiboot.h"
-/*
+
 enum paging_masks {
     present_bit = 0x1,
     writeable_bit = 0x2,
@@ -20,21 +20,7 @@ enum paging_masks {
     physical_addr_mask = 0x000ffffffffff000,
     os_defined_mask = 0x7ff0000000000000,
     no_exec_bit = 0x8000000000000000
-};*/
-
-const uintptr_t present_mask;
-const uintptr_t writeable_mask;
-const uintptr_t user_access_mask;
-const uintptr_t write_through_cache_mask;
-const uintptr_t disable_cache_mask ;
-const uintptr_t accessed_mask ;
-const uintptr_t dirty_mask ;
-const uintptr_t huge_mask ;
-const uintptr_t global_mask ;
-const uintptr_t available_mask;
-const uintptr_t physical_addr_mask;
-const uintptr_t os_defined_mask;
-const uintptr_t no_exec_mask;
+};
 
 #define PAGE_TABLE_ENTRY_COUNT 512
 #define RECURSIVE_PAGE_TABLE_INDEX 511

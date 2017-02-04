@@ -5,10 +5,6 @@ const intptr_t heap_size = 100 * 1024;
 
 static intptr_t heap_addr;
 
-static intptr_t align_addr(intptr_t addr, size_t alignment)  {
-    return (alignment) ? ((addr+alignment-1) & ~(alignment-1)) : (addr);
-}
-
 struct free_node {
     struct free_node *next;
     size_t size;
@@ -17,6 +13,14 @@ struct free_node {
 const size_t minimum_alloc_size = sizeof(struct free_node) + 2*sizeof(uintptr_t);
 
 static struct free_node *free_list_head;
+
+static inline intptr_t align_addr(intptr_t addr, size_t alignment)  {
+    return (alignment) ? ((addr+alignment-1) & ~(alignment-1)) : (addr);
+}
+
+static inline struct free_node* get_free_node_from_addr(intptr_t addr) {
+    return (struct free_node*) (addr - sizeof(struct free_node));
+}
 
 static void compact_heap() {
     struct free_node *node = free_list_head;
@@ -33,7 +37,7 @@ void init_heap(void) {
     for(virtual_addr_t addr = heap_start_addr; addr < heap_start_addr + heap_size; addr += PAGE_SIZE) {
         struct page page;
         get_page_for_vaddr(addr, &page);
-        map_page(&page, present_mask | writeable_mask);
+        map_page(&page, present_bit | writeable_bit);
     }
 
     free_list_head = (struct free_node*) heap_addr;
@@ -107,12 +111,28 @@ intptr_t kmalloc(size_t bytes) {
     return (intptr_t) node + sizeof(struct free_node);
 }
 
-intptr_t krealloc(intptr_t old_ptr, size_t bytes) {
+void kmemcpy(intptr_t dest, intptr_t src, size_t bytes) {
+    for(size_t i=0; i<bytes; ++i) {
+        *(char*)(dest + i) = *(char*)(src + i);
+    }
+}
 
+intptr_t krealloc(intptr_t addr, size_t bytes) {
+    struct free_node *node = get_free_node_from_addr(addr);
+    
+    if(node->size >= bytes) {
+        return addr;
+    }
+
+    intptr_t new_addr = kmalloc(bytes);
+    kmemcpy(new_addr, addr, node->size);
+    kfree(addr);
+
+    return new_addr;
 }
 
 void kfree(intptr_t addr) {
-    struct free_node *node = (struct free_node*) (addr - sizeof(struct free_node));
+    struct free_node *node = get_free_node_from_addr(addr);
     terminal_printf("Free node base %zx\n", (intptr_t) node);
     node->next = free_list_head->next;
     free_list_head->next = node;

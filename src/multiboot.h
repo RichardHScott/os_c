@@ -100,6 +100,8 @@ struct multiboot_elf_section_header {
 } __attribute__ ((packed));
 
 bool elf_section_is_allocated(struct multiboot_elf_section_header *header);
+bool elf_section_is_writable(struct multiboot_elf_section_header *header);
+bool elf_section_is_exectuable(struct multiboot_elf_section_header *header);
 
 struct multiboot_elf_symbols {
     uint32_t type;
