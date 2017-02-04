@@ -206,5 +206,5 @@ p2_table:
     resb 4096
 
 stack_bottom:
-	resb 32384 ; 16 KiB
+	resb 16384 ; 16 KiB
 stack_top:
