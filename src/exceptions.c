@@ -72,6 +72,7 @@ enum exception_id {
 const char* exception_id_strings[] = {
     "divide_by_zero",
     "debug",
+    "--pic--",
     "breakpont",
     "overflow",
     "bound_range_exceeded",
@@ -88,8 +89,7 @@ const char* exception_id_strings[] = {
     "alignment_check",
     "machine_check",
     "simd_fp",
-    "vx",
-    "security"
+    "vx"
 };
 
 static int divide_by_zero_handler(struct exception_info* info){

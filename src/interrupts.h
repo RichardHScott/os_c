@@ -20,6 +20,10 @@ enum idt_flags {
     idt_present = 1 << 15
 };
 
+enum idt_gate_type {
+    idt_gate_reserved = 0
+};
+
 /*
 Type Field Description
 Decimal 11 10 9 8 32-Bit Mode IA-32e Mode
