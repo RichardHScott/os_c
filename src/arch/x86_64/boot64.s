@@ -231,11 +231,12 @@ setup_interrupt_handlers:
     ret
 
 i_ok_timer:
+    mov rax, 0
     ret
 
 i_ok:
-    mov al, 0x20
-    out 0x20, al
+    hlt
+    mov rax, 0
     ret
 
 section .bss

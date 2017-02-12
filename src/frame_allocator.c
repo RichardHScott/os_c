@@ -90,6 +90,7 @@ int allocate_frame(struct frame *frame) {
         } else if(index >= allocator.multiboot_start.number && index <= allocator.multiboot_end.number) {
             ++allocator.next_free_frame.number;
         } else {
+            terminal_printf("alloc\n");
             frame->number = allocator.next_free_frame.number++;
             return 0;
         }

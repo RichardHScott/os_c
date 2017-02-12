@@ -115,7 +115,7 @@ static int debug_handler(struct exception_info* info){
     terminal_printf(exception_id_strings[ex_debug]);
     terminal_printf("iptr: %#zX \t code_seg: %#zX \t flags: %#zX\n", info->instruction_ptr, info->code_segement, info->flags);
     terminal_printf("Stackptr: %#zX \t Stackseg: %#zX\n", info->stack_ptr, info->stack_segement);
-
+ asm volatile("hlt");
     return 0;
 }
 
@@ -128,7 +128,7 @@ static int breakpont_handler(struct exception_info* info){
     terminal_printf(exception_id_strings[ex_breakpont]);
     terminal_printf("iptr: %#zX \t code_seg: %#zX \t flags: %#zX\n", info->instruction_ptr, info->code_segement, info->flags);
     terminal_printf("Stackptr: %#zX \t Stackseg: %#zX\n", info->stack_ptr, info->stack_segement);
-
+ asm volatile("hlt");
     return 0;
 }
 
@@ -137,6 +137,7 @@ static void overflow_handler(struct exception_info* info){
                  :
                  :
                  :);
+                  asm volatile("hlt");
 }
 
 static void bound_range_exceeded_handler(struct exception_info* info){
@@ -144,6 +145,7 @@ static void bound_range_exceeded_handler(struct exception_info* info){
                  :
                  :
                  :);
+                  asm volatile("hlt");
 }
 
 static void invalid_opcode_handler(struct exception_info* info){
@@ -151,6 +153,7 @@ static void invalid_opcode_handler(struct exception_info* info){
                  :
                  :
                  :);
+                  asm volatile("hlt");
 }
 
 static void device_not_available_handler(struct exception_info* info){
@@ -158,6 +161,7 @@ static void device_not_available_handler(struct exception_info* info){
                  :
                  :
                  :);
+                  asm volatile("hlt");
 }
 
 static void double_fault_handler(struct exception_info* info){
@@ -178,6 +182,7 @@ static void coprocessor_segement_overrun_handler(struct exception_info* info){
                  :
                  :
                  :);
+                  asm volatile("hlt");
 }
 
 static void invalid_tss_handler(struct exception_info* info){
@@ -185,6 +190,7 @@ static void invalid_tss_handler(struct exception_info* info){
                  :
                  :
                  :);
+                  asm volatile("hlt");
 }
 
 static void segement_not_present_handler(struct exception_info* info){
@@ -192,6 +198,7 @@ static void segement_not_present_handler(struct exception_info* info){
                  :
                  :
                  :);
+                  asm volatile("hlt");
 }
 
 static void stack_segement_fault_handler(struct exception_info* info){
@@ -199,6 +206,7 @@ static void stack_segement_fault_handler(struct exception_info* info){
                  :
                  :
                  :);
+                  asm volatile("hlt");
 }
 
 static void general_protection_fault_handler(struct exception_info* info){
@@ -227,8 +235,8 @@ static int page_fault_handler(struct exception_info_with_error* info){
     terminal_printf("Stackptr: %#zX \t Stackseg: %#zX\n", info->stack_ptr, info->stack_segement);
     terminal_printf("Error code: %#zX\n", info->error_code);
 
-    //return 1;
     asm volatile("hlt");
+    return 1;
 }
 
 static void x87_fpu_exception_handler(struct exception_info* info){
@@ -236,6 +244,7 @@ static void x87_fpu_exception_handler(struct exception_info* info){
                  :
                  :
                  :);
+                  asm volatile("hlt");
 }
 
 static void alignment_check_handler(struct exception_info* info){
@@ -243,6 +252,7 @@ static void alignment_check_handler(struct exception_info* info){
                  :
                  :
                  :);
+                  asm volatile("hlt");
 }
 
 static void machine_check_handler(struct exception_info* info){
@@ -250,6 +260,7 @@ static void machine_check_handler(struct exception_info* info){
                  :
                  :
                  :);
+                  asm volatile("hlt");
 }
 
 static void simd_fp_handler(struct exception_info* info){
@@ -257,6 +268,7 @@ static void simd_fp_handler(struct exception_info* info){
                  :
                  :
                  :);
+                  asm volatile("hlt");
 }
 
 static void vx_handler(struct exception_info* info){
@@ -264,6 +276,7 @@ static void vx_handler(struct exception_info* info){
                  :
                  :
                  :);
+                  asm volatile("hlt");
 }
 
 static void security_handler(struct exception_info* info){
@@ -271,6 +284,7 @@ static void security_handler(struct exception_info* info){
                  :
                  :
                  :);
+                  asm volatile("hlt");
 }
 
 void init_exception_handlers(void) {

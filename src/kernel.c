@@ -26,13 +26,23 @@ static void pf_test(int i) {
 	pf_test(++i);
 }
 
+int timer_print(void) {
+	terminal_printf("T");
+
+	return 0;
+}
+
 void kernel_main(uintptr_t pmultiboot) {
 	init_terminal();
 
 	pic_init(0x20, 0x28);
+	init_exception_handlers();
+
 	pic_enable_interrupts();
 
-	init_exception_handlers();
+	add_interrupt_handler(0x20, timer_print);
+
+	
 
 	keyboard_init();
 	add_interrupt_handler(0x21, keyboard_interrupt);
@@ -47,9 +57,9 @@ void kernel_main(uintptr_t pmultiboot) {
 
 	//int b = 0/0;
 	//*(int*)(0xdeadb00) = 20;
-	asm volatile("int $3");
-		asm volatile("int $3");
-			asm volatile("int $3");
+	// asm volatile("int $3");
+	// asm volatile("int $3");
+	// asm volatile("int $3");
 
 	//test();
 

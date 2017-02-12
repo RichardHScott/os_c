@@ -345,7 +345,7 @@ static intptr_t get_p4_table_phys_addr() {
 
 void remap_kernel() {
     enable_no_exec();
-    enable_write_protect();
+    //enable_write_protect(); //currently breaks as it makes stack unwritable
 
     struct page page;
     page.number = 0xdeadbeef;
@@ -412,13 +412,13 @@ void remap_kernel() {
     //id map the vga buffer
     struct frame vga_frame;
     get_frame_for_addr(&vga_frame, 0xb8000);
-    identity_map_page(&vga_frame, writeable_bit | present_bit);
+    identity_map_page(&vga_frame, writeable_bit | present_bit | no_exec_bit);
 
     //id map the multiboot structure
     for(intptr_t mboot_addr = (intptr_t)data.start; mboot_addr <= data.start + data.start->total_size; mboot_addr += PAGE_SIZE) {
         struct frame mboot_frame;
         get_frame_for_addr(&mboot_frame, mboot_addr);
-        identity_map_page(&mboot_frame, present_bit);
+        identity_map_page(&mboot_frame, present_bit | no_exec_bit);
     }
 
     terminal_printf("New kernel page tables set up.\n");
@@ -440,7 +440,6 @@ void remap_kernel() {
 
     terminal_printf("End of remap.\n");
 }
-
 
 /* From http://git.qemu.org/?p=qemu.git;a=blob;f=target/i386/monitor.c
   47     monitor_printf(mon, TARGET_FMT_plx ": " TARGET_FMT_plx

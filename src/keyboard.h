@@ -4,4 +4,4 @@
 #include "util.h"
 
 void keyboard_init(void);
-void keyboard_interrupt(void);
+int keyboard_interrupt(void);

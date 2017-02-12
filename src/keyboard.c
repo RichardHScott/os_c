@@ -86,20 +86,22 @@ bool num_lock = false;
 
 bool keyboard_key_released = false;
 
-void keyboard_interrupt(void) {
+int keyboard_interrupt(void) {
     uint8_t code = inb(keyboard_encoder_port);
 
     if(code == key_relased_code) {
         //key released
         keyboard_key_released = true;
-        return;
+        return 0;
     } else if(keyboard_key_released) {
         keyboard_key_released = false;
-        return;
+        return 0;
     }
 
     char ascii = ascii_key[code];
     if(ascii != 0) {
         terminal_print_char(ascii);
     }
+
+    return 0;
 }

@@ -37,6 +37,7 @@ void init_heap(void) {
     for(virtual_addr_t addr = heap_start_addr; addr < heap_start_addr + heap_size; addr += PAGE_SIZE) {
         struct page page;
         get_page_for_vaddr(addr, &page);
+        terminal_printf("Mapping page %#x\n", addr);
         map_page(&page, present_bit | writeable_bit);
     }
 
