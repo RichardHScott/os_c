@@ -95,7 +95,7 @@ void pic_init(uint8_t master_remap_offset, uint8_t slave_remap_offset) {
 
 }
 
-void add_interrupt_handler(uint16_t interrupt, uintptr_t handler) {
+void add_interrupt_handler(uint16_t interrupt, intptr_t handler) {
     asm_add_interrupt_handler(interrupt, handler);
 }
 

@@ -119,7 +119,6 @@ done:
 ; Shouldn't be touching the XMM registers, but check this!
 ; GCC might be using them
 %macro save_registers 0
-    sub rsp, 130
     push rax
     push rcx
     push rdx
@@ -141,7 +140,6 @@ done:
     pop rdx
     pop rcx
     pop rax
-    add rsp, 130
 %endmacro
 
 %macro interrupt_shim_x 1
@@ -149,13 +147,32 @@ interrupt_shim_%1:
     save_registers
     cld
 
+    ;set rdi to the original stack pointer
+    ;prior to saving registers on stack
+    ;this is 9*8 bytes above current
+    mov rdi, rsp
+    add rdi, 0x48
+
+    mov eax, 0
     call [interrupt_functions + %1 * 8]
+
+    ;eax set to 1 if an error code needs popping from the stack
+    cmp eax, 0
+    jne .restore_and_pop_stack
 
     mov al, 0x20
     out 0x20, al
 
     restore_registers
 
+    iretq
+
+.restore_and_pop_stack:
+    mov al, 0x20
+    out 0x20, al
+
+    restore_registers
+    add rsp, 8
     iretq
 %endmacro
 
@@ -210,8 +227,6 @@ setup_interrupt_handlers:
     jne .setup_idt_loop
 
     lidt [interrupt_descriptor_table]
-    
-    mov r8, 0
 
     ret
 
@@ -219,7 +234,6 @@ i_ok_timer:
     ret
 
 i_ok:
-
     mov al, 0x20
     out 0x20, al
     ret
